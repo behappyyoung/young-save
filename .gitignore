@@ -1,0 +1,8 @@
+venv
+venv3
+.DS_Store
+*.pyc
+*.sock
+.idea
+
+
