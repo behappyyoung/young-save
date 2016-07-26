@@ -8,6 +8,4 @@ else:
     ALLOWED_HOSTS = [".your_domain_name.com",]
 
 
-url(r'^static\/(?P<path>.*)$','django.views.static.serve', {'document_root': settings.STATIC_ROOT })
-
 
