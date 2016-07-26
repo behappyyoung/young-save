@@ -1,0 +1,18 @@
+
+upstream django_gunicorn {
+
+server unix:///Users/s0199669/gimp/gimpdev/run/gunicorn.sock fail_timeout=0;
+
+}
+
+
+        location / {
+		       proxy_pass http://django_gunicorn;
+		        proxy_set_header Host $host;
+		        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+   location /static {
+        alias /Users/s0199669/gimp/gimpdev/static; # your Django project's static files
+    }
+
