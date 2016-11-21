@@ -1,0 +1,50 @@
+{% extends "window_base.html" %}
+{% block content %}
+
+
+<style type="text/css">
+table {
+	table-layout: fixed;
+}
+.title {
+	margin: 10px;
+	font-weight: bolder;
+	text-transform: uppercase;
+}
+ .title {
+	width: 200px;
+}
+
+</style>
+
+<div  class="report">
+{{log}}{{oid}}
+<div class="sub-title"> 
+	Order History Log
+</div>
+	<table>
+		<thead>
+			<th> date </th>
+			{% if oid == None %}
+			<th> order name</th>
+			{% endif %}
+			<th> action</th>
+			<th> By </th>
+		</thead>
+		<tbody>
+			{% for l in log %}
+			<tr>
+				<td> {{l.update_time}}</td>
+				{% if oid == None %}
+				<td> {{l.order_name}}</td>
+				{% endif %}
+				<td> {{l.action}}</td>
+				<td> {{l.user_id}}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+</div>
+
+{% endblock content %}

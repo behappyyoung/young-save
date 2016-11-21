@@ -1,0 +1,86 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+<style type="text/css">
+	.form-wrapper{
+		width: 800px;
+		margin: 50px auto;
+	}
+	.form {
+		width: 700px;
+		margin: 50px auto;
+	}
+	form label, form input, form select, form datalist{
+		width: 300px;
+		margin: 20px auto;
+	}
+	form .actions input{
+		width: 200px;
+	}
+	.alert{
+		width: 600px;
+	}
+
+	.errorlist{
+		position: absolute;
+		color: red;
+		    margin-top: -10px;
+    margin-left: 300px;
+	}
+</style>
+<script type="text/javascript">
+jQuery(document).ready(function() {
+	document.getElementById('id_relative').outerHTML = document.getElementById('id_relative').outerHTML.replace(/select/g, 'datalist');
+	$('input[name="relative"]').val($('#id_relative option[datalisted=datalisted]').val());
+
+});
+function formSubmit(action){
+
+	if( action =='delete' && confirm('are you sure to delete?')){
+		$('#relForm').find("input[name=action]").val(action);	
+		$('#relForm').submit();
+	}else{
+		$('#relForm').find("input[name=action]").val(action);
+		$('#relForm').submit();
+	}
+
+
+}
+</script>
+<div class="tracker">
+<div class="sub-title"> 
+
+    {% if 'Add' in action %}
+    	Add 
+    {% else %}
+    	 Edit 
+    {% endif %} 
+Patient Relationship </div>
+
+<div class="form-wrapper">
+		{% if message %}
+		<div class="alert alert-info"> {{message}} </div>
+		{% endif %}
+            <form action="/patient/{{ pid }}/relationship/" method="post" id="relForm">
+                {% csrf_token %}
+                {{ form }}
+                <input list="id_relative" name="relative">
+              <div class="actions">
+
+              {% if 'Add' in action %}
+                <input type="submit"  name="action"  value='Add' class="btn btn-primary btn-sm"  />   
+                 <input type="button" class="btn btn-sm" value='Cancel' onclick="window.location.href = '/patient/{{ pid }}/';" />   
+                {% else %}
+
+                 <input type="text"  name="action"  value='Save' onclick="formSubmit('edit');" class="btn btn-primary btn-sm"  />   
+ 				<input type="button" class="btn btn-sm" value='Cancel' onclick="window.location.href = '/patient/{{ pid }}/';" />   
+                 <input type="text" value="Delete" onclick="formSubmit('delete');" class="btn btn-primary btn-sm"  />   
+               {% endif %}
+               
+            </div>  				
+               
+            </form>
+
+           
+</div>            
+</div>
+{% endblock content %}

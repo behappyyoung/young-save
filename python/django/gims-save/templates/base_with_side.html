@@ -100,7 +100,40 @@
                 </div>
                 <div class="panel">
                     <div class="title"> Quick Link </div>
-                    <div class="menu"> <a href="/orders/"> Order List </a>
+
+                    <div class="menu">
+                        <ul>
+                        <li>
+                            {% if most_access.0.url == '/' %}
+                                <a href="{{ most_access.1.url }}"> 
+                                {% if  most_access.1.url|length < 20 %}
+                                        {{ most_access.1.url|slice:"1:"  }}
+                                {% else %}
+                                        {{ most_access.1.url| slice:"1:15" }} ...
+                                {% endif %}
+
+                                </a>
+                                {% if  most_access.1.url != last_access.0.url %}
+                                   </li><li> <a href="{{ last_access.0.url }}"> 
+                                        {% if  last_access.0.url|length < 20 %}
+                                                {{ last_access.0.url|slice:"1:" }}
+                                        {% else %}
+                                                {{ last_access.0.url| slice:"1:15" }} ...
+                                        {% endif %}
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <a href="{{ most_access.0.url }}">
+                                 {% if  most_access.0.url|length < 20 %}
+                                        {{ most_access.0.url|slice:"1:"  }}
+                                {% else %}
+                                        {{ most_access.0.url| slice:"1:15" }} ...
+                                {% endif %}
+                                 </a>
+                            {% endif %}
+                     </li>
+                     </ul>
+                        
                     </div>
                 </div>                
                 <div class="panel dash-list">

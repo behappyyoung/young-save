@@ -46,8 +46,11 @@ td, th {
 	text-align: center;
 	font-size: 12px;
 	padding-top: 5px;
-	background-image: url('/static/IMAGES/icon-beaker.png');
-	background-size: cover;
+    /* background-image: url(/static/IMAGES/icon-beaker.png); */
+    /* background-size: contain; */
+    /* background-repeat: no-repeat; */
+    /* background-position: center; */
+    /* background-blend-mode: luminosity; */
 }
 #dialog{
 	display: none;
@@ -123,9 +126,38 @@ gimpdevApp.controller('workflowsController', ['$scope', function($scope) {
  			$( "#dialog" ).dialog();
  	}
  	$scope.saveWork = function(){
+ 		var csvContent = "data:text/csv;charset=utf-8,\ufeff";
+ 		var fdata = $('.intube');
+                        var body='';
+                        for(var i =0; i< fdata.length; i++){
+                              body += $(fdata[i]).html();
+                        }
+
+ 		csvContent += '\n' + body;
+ 		data = encodeURI(csvContent);
+
+                        var link = document.createElement('a');
+                        link.setAttribute('href', data);
+                        link.setAttribute('download',  $('#dialog-name').val() + '.txt');
+                        link.click();
 
  	}
- 	
+ 	$scope.Print = function(){
+ 		 var divElements = $('.tubes.step2').html();
+
+ 		var printWindow = window.open("", "_blank", 'height=590,width=1100');
+                            printWindow.document.open();
+                             printWindow.document.write('<html><head><title>' + $('#dialog-name').val() + '</title>\
+                                   </head><body><div id="printingDiv">');
+                            printWindow.document.write(divElements);
+                            printWindow.document.write('</div></body></html>');
+                            printWindow.document.close();
+                             setTimeout(function() {
+                                 printWindow.print();
+                                 printWindow.close();
+
+                             }, 100);
+ 	}
 }]);
 </script>
 
@@ -157,9 +189,9 @@ gimpdevApp.controller('workflowsController', ['$scope', function($scope) {
 						        <span ng-show="sortType == 'type' && sortReverse" class="fa fa-caret-up"></span> </a> 
 	       					</th>
 							<th> order </th>
-							<th> <a href="#" ng-click="sortType = 'orderstatus'; sortReverse = !sortReverse"> order status 
-						        <span ng-show="sortType == 'orderstatus' && !sortReverse" class="fa fa-caret-down"></span>
-						        <span ng-show="sortType == 'orderstatus' && sortReverse" class="fa fa-caret-up"></span> </a> 
+							<th> <a href="#" ng-click="sortType = 'status'; sortReverse = !sortReverse"> order status 
+						        <span ng-show="sortType == 'status' && !sortReverse" class="fa fa-caret-down"></span>
+						        <span ng-show="sortType == 'status' && sortReverse" class="fa fa-caret-up"></span> </a> 
 						    </th>
 							
 						</tr>

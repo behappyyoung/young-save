@@ -51,7 +51,7 @@ def index(request):
     workflows = urllib2.urlopen(LOOMURL+'abstract-workflows/').read()
     fileData = urllib2.urlopen(LOOMURL+'file-data-objects/').read()
     running = urllib2.urlopen(LOOMURL+'run-requests/').read()
-
+    logging(request, 'access')
     return render(request, 'workflows/index.html', {'data':response, 'fileData': fileData, 'workflows':workflows, 'running':running}, context_instance=RequestContext(request, processors=[custom_proc]))
 
 BASE_WORKFLOW_SQL='SELECT w.*, wt.type_name as tname from workflows_workflows w left join workflows_workflowtype wt on w.type_id = wt.id WHERE w.status="A" '
@@ -68,7 +68,6 @@ def workflows(request):
     c_workflows = myc.my_custom_sql(BASE_WORKFLOW_SQL)
 
     logging(request, 'access')
-    print(LOOMURL, sys.version)
     return render(request, 'workflows/workflows.html', {'workflows':json.dumps(c_workflows)}, context_instance=RequestContext(request, processors=[custom_proc]))
 
 
@@ -84,7 +83,7 @@ def workflow_details(request, wid):
             c_workflow = urllib2.urlopen(LOOMURLS['workflows']+wid+'/', context=ctx).read()
         else:
             c_workflow = urllib2.urlopen(LOOMURLS['workflows']+wid+'/').read()
-    except BadStatusLine:
+    except:
         message = "could not fetch %s" % LOOMURLS['workflows']
         messages.error(request, message)
         return HttpResponseRedirect('/')
@@ -103,6 +102,7 @@ def define_workflows(request):
     type_lists =[]
     for wftype in wf_types:
         type_lists.append({'id':wftype.id, 'type': wftype.type, 'typename': wftype.type_name, 'desc': wftype.desc})
+    logging(request, 'access')
     return render(request, 'workflows/workflows_create.html', {'title': 'Create Workflows', 'wf_types': json.dumps(type_lists)},
                   context_instance=RequestContext(request, processors=[custom_proc]))
 
@@ -112,8 +112,18 @@ def edit_workflow(request, wid):
     if request.method == 'POST':
         form = WorkflowsForm(request.POST)
         if form.is_valid():
-            form.save()
-            return HttpResponseRedirect('/workflows/')
+            #form.save()
+            wf = Workflows.objects.get(id=wid)
+            wf.name = request.POST['name']
+            wf.type_id = request.POST['type']
+            wf.workflow_id = request.POST['workflow_id']
+            wf.inputs = request.POST['inputs']
+            wf.fixed_inputs = request.POST['fixed_inputs']
+            wf.desc = request.POST['desc']
+            wf.status = request.POST['status']
+            wf.version = request.POST['version']
+            wf.save()
+            return HttpResponseRedirect('/editworkflow/'+wid+'/')
     else:
         wf = Workflows.objects.get(id=wid)
         form = WorkflowsForm(instance=wf)
@@ -134,7 +144,7 @@ def lab_workflows(request):
         print request.session.get('username')
     else:
         return HttpResponseRedirect('/saml/?slo')
-
+    logging(request, 'access')
     return render(request, 'workflows/lab_workflow.html', {'title': 'Lab Workflows'})
 
 
@@ -146,6 +156,7 @@ def new_labwork(request):
         return HttpResponseRedirect('/saml/?slo')
     myc = CustomSQL()
     c_samples = myc.my_custom_sql(LAB_SAMPLE_SQL)
+    logging(request, 'access')
     return render(request, 'workflows/labwork.html', {'samples':json.dumps(c_samples), 'title': 'New Lab Work'})
 
 
@@ -159,14 +170,12 @@ def analyses(request):
             running = urllib2.urlopen(LOOMURLS['runrequest'], context=ctx).read()
         else:
             running = urllib2.urlopen(LOOMURLS['runrequest']).read()
-    except BadStatusLine:
+    except:
         message = "could not fetch %s" % LOOMURLS['runrequest']
         messages.error(request, message)
         return HttpResponseRedirect('/')
-    print(running)
     json_running = yaml.safe_load(running)
-    print(json_running, type(json_running))
-
+    logging(request, 'access')
     return render(request, 'workflows/analyses.html', {'running': json_running}, context_instance=RequestContext(request, processors=[custom_proc]))
 
 
@@ -174,20 +183,18 @@ def analyses(request):
 def run_analysis(request):
     if 'username' not in request.session:
         return HttpResponseRedirect('/saml/?slo')
-    logging(request, 'access')
 
     if 'Interpretation' not in request.session.get('role') and 'Manager' not in request.session.get('role'):
-        accessLog(url=request.path_info, remote_address=request.environ['REMOTE_ADDR'], result='redirect',
-              access_type="UnAuthorized").log()
         message = " You do not have permission to load  %s" % request.path_info
         messages.error(request, message)
+        logging(request, 'UnAuthorized')
         return HttpResponseRedirect('/')
 
     myc = CustomSQL()
     c_samples = myc.my_custom_sql(BASE_SAMPLE_SQL)
     c_samplefiles = myc.my_custom_sql(BASE_SAMPLEFILES_SQL)
     c_workflows = myc.my_custom_sql(BASE_WORKFLOW_SQL)
-
+    logging(request, 'access')
     return render(request, 'workflows/analysis.html', {'workflows':json.dumps(c_workflows), 'samples':json.dumps(c_samples), 'samplefiles':json.dumps(c_samplefiles)}, context_instance=RequestContext(request, processors=[custom_proc]))
 
 

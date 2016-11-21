@@ -1,0 +1,45 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+<style type="text/css">
+.pathway{
+  /*white-space: pre-wrap;*/
+  margin-top: 30px;
+}
+td.title{
+  font-weight: bolder;
+}
+</style>
+<script type="text/javascript">
+
+ jQuery(document).ready(function(){
+
+
+ });
+
+
+</script>
+<div class="tracker">
+
+<div class="sub-title">  KEGG pathway for : {{gene}} </div>
+
+  <div class="image"> <img src="/static/IMAGES/KEGG/{{imagename}}" /></div>
+
+
+<div class="pathway">
+        <table> 
+          
+  {% for line in htmlList %}
+        <tr>
+
+            <td width="120px" class="title">{{ line.title }} </td>
+            <td>{{ line.details }}</td>
+        </tr>
+  {% endfor %}
+          
+        </table> 
+</div>
+
+
+
+</div>
+{% endblock content %}

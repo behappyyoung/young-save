@@ -1,0 +1,232 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+<style type="text/css">
+.phenolists {
+  display: inline-block;
+  width: 400px;
+  margin-left: 10px;
+}
+.phenolists .hpocode {
+  width: 100px;
+  font-weight: bold;
+  display: inline-block;
+
+}
+.current .lists{
+  width: 850px;
+  margin:auto;
+}
+.graphic {
+  margin-bottom: 30px;
+  width: 1200px;
+}
+.disease-list .list {
+  min-width: 850px;
+  max-height: 800px;
+  overflow: auto;
+}
+#disease_titles{
+  height: 120px;
+  margin: -30px auto 20px;
+}
+#disease_titles .title{
+-webkit-transform: rotate(-45deg);
+-moz-transform: rotate(-45deg);
+-ms-transform: rotate(-45deg);
+-o-transform: rotate(-45deg);
+    display: inline-block;
+    width: 350px;
+    height: 30px;
+    font-size: 12px;
+}
+#disease_titles .title:first-child{
+    margin-left: 230px;
+}
+#disease_titles .title:not(:first-child){
+    margin-left: -320px;
+}
+.hpo_title{
+  display: inline-block;
+  width: 230px;
+  overflow: hidden;
+  margin-left: 30px;
+}
+.score_wrapper{
+  display: inline-block;
+}
+.score {
+  display: inline-block;
+  width: 20px;
+  height: 10px;
+  margin-right: 10px;
+}
+
+.score1{
+  background-color: #dff9e2;
+}
+.score2{
+  background-color: #e2f7e3;
+}
+.score3{
+  background-color: #aff5b4;
+}
+.score4{
+ background-color: #43bb4c; 
+}
+.score5{
+  background-color: #00860a;
+}
+.score6{
+  background-color: #4f4df1;
+}
+.score7{
+  background-color: #6a67ff;
+}
+.score8{
+  background-color: #0400ff;
+}
+.total-score{
+  font-size: 8px;
+  margin-left: 10px;
+  margin-right: 0px;
+}
+.score-tooltip{
+  background-color: green !important;
+}
+
+.tooltip.top .tooltip-inner{ 
+max-width:310px;
+padding:3px 8px;
+color:#fff;
+text-align:center;
+background-color:#245973;
+border-radius:5px;
+}
+
+.tooltip.bottom .tooltip-inner{ 
+max-width:310px;
+padding:3px 8px;
+color:#fff;
+text-align:center;
+background-color:#245973;
+border-radius:5px;
+}
+</style>
+<script type="text/javascript">
+
+jQuery(document).ready(function(){
+    {% autoescape off %}
+                              
+      var hpo_list = [];
+      var acc_list = [];
+      var disease_list=[];
+      var scores = [];
+      {% for slist in sortedlists%}
+          disease_list.push('{{ slist.title}}');
+          scores.push('{{ slist.score}}'.split(','));
+      {% endfor %}
+
+      {% for plist in phenolists %}
+            hpo_list.push('{{ plist.name}}');
+            acc_list.push('{{ plist.acc}}');
+      {% endfor %}
+    {% endautoescape %}
+
+if(window.location.hostname =='gims-dev.shc.org'){
+            //    console.log('hpo_list', hpo_list, 'disease_list',disease_list, 'scores', scores);
+
+ }
+ var scoreSize = (disease_list.length > 20)? 20: disease_list.length;
+  var titleDiv = '';
+  var titleString='';
+  for(var i=0;i<20;i++){
+    titleString = (disease_list[i].length > 25) ? disease_list[i].substr(0,20)+'...' : disease_list[i];
+    titleDiv += '<div class="title">' + titleString + '</div>';
+  }
+  $('#disease_titles').html(titleDiv);
+  
+  var scoreDiv ='';
+  for(var s=0;s<scoreSize;s++){
+      scoreDiv +=  '<div class="score total-score" > '+ scores[s][0].substr(1,3) +' </div>'; 
+    }
+  var hpoDiv = '<div class="hpo" > <div class="hpo_title">  </div>'+scoreDiv+' </div>';  
+  scoreDiv ='';
+
+  for(var i=0;i<hpo_list.length;i++){
+    for(var s=0;s<scoreSize;s++){
+
+      var scoreClass = 'score'+Math.round(parseFloat(scores[s][i+1]));
+
+      scoreDiv +=  '<div  data-toggle="tooltip" class="red-tooltip score ' +scoreClass + '  " title=" '+hpo_list[i]+'  /  '+disease_list[s]+' [ '+parseFloat(scores[s][i+1]).toFixed(2)+' ] "> </div>'; 
+    }
+    titleString = ( hpo_list[i] > 30 ) ? hpo_list[i].substr(0,25) + '...' : hpo_list[i];
+    hpoDiv += '<div class="hpo" id="'+hpo_list[i]+'"> <div class="hpo_title" title="'+acc_list[i]+'">' + titleString + '</div> <div class="score_wrapper">'+scoreDiv+'</div> </div>';
+    scoreDiv ='';
+  }
+  $('#hpo_list').html(hpoDiv);
+
+  $('.score').tooltip({
+        classes: {
+        "ui-tooltip": "score-tooltip"
+      }
+       
+  });
+ });
+
+</script>
+
+<div class="tracker">
+<div class="sub-title"> 
+Patient [ <a href="/patient/{{order.patient_id}}/"> {{order.patient_id}} </a> ]'<span>s</span> Associated Disease by Score <span>for</span> the Order : [ <a href="/order/{{order.id}}/"> {{order.order_name}} </a> ]
+     </div>
+
+  <div class="current ">
+  <div class="sub-sub-title">  Current Phenotypes</div>
+  <div class="lists">
+      {% for plist in phenolists %}
+      <div class="phenolists">
+        <span class="hpocode">{{plist.acc}}</span>
+        <span class="hpoterm">{{plist.name}}</span>
+       </div>
+     {% endfor %}  
+    </div>
+
+
+  </div>
+  <div class="graphic">
+   <div class="sub-sub-title">  Phenotype Probability </div>
+      <div class="disease_titles" id="disease_titles"> </div>
+      <div class="hpo_list" id="hpo_list"> </div>
+  </div>
+  <div class="disease-list">  
+   <div class="sub-sub-title">  Sorted Disease Lists </div>
+     <div class="list">  
+        <table class="table table-bordered table-striped table-hover">
+        <tr>
+
+              <th> Disease ID</th>
+              <th> Disease Title</th>
+              <th> Score </th>
+
+        </tr>
+
+        {% for slist in sortedlists %}
+        <tr>
+          <td>  
+            {% if 'OMIM' in slist.id %}
+               <a href="/PhenoType/{{slist.id}}/" target="_new"> {{ slist.id}}</a>
+            {% else %}
+              {{ slist.id}}
+            {% endif %}
+          </td>  
+          <td> {{ slist.title}}</td>
+          
+          <td> {{ slist.score.0 }}</td>
+        </tr>
+        {% endfor %}
+        </table>  
+      </div> 
+  </div>
+
+</div>
+{% endblock content %}

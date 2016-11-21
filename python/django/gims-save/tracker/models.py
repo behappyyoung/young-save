@@ -8,30 +8,66 @@ from gims import settings
 from mybackend.models import PhenoTypeLists, GeneLists
 
 
+class Relations(models.Model):
+    rel = models.CharField(max_length=20, default='SELF')
+    rel_name = models.CharField(max_length=100, null=False, default='Self')
+
+    def __unicode__(self):
+        return self.rel_name
+
+
 class Patients(models.Model):
     pid = models.CharField(max_length=100, unique=True, null=False)            # pid = mrn for now
     last_name = models.CharField(max_length=50,  null=True, blank=True)
+    middle_name = models.CharField(max_length=50, default=' ')
     first_name = models.CharField(max_length=50,  null=True, blank=True)
     mrn = models.CharField(max_length=100, unique=True, null=False)           # patient ID for now
-    dob = models.CharField(max_length=50,  null=True, blank=True)
-    race = models.CharField(max_length=50,  null=True, blank=True)
-    sex = models.CharField(max_length=50,  null=True, blank=True)
+    dob = models.DateField(null=True, blank=True)
+    address = models.CharField(max_length=200,  null=True, blank=True)
+    phone = models.CharField(max_length=20,  null=True, blank=True)
+    work_phone = models.CharField(max_length=200,  null=True, blank=True)
+    ethnicity = models.CharField(max_length=50,  null=True, blank=True)
+    sex = models.CharField(max_length=10,  null=True, blank=True)
 
     def __unicode__(self):
         return self.mrn
 
 
+class PeopleRelations(models.Model):
+    rel = models.CharField(max_length=20, default='')
+    rel_name = models.CharField(max_length=100, null=False, default='')
+    allowed_sex = models.CharField(max_length=20, null=False, default='')
+    back_relation_male = models.ForeignKey('self',related_name="male", null=True, blank=True)
+    back_relation_female = models.ForeignKey('self', related_name="female", null=True, blank=True)
+
+    def __unicode__(self):
+        return self.rel_name
+
+
+class PatientRelations(models.Model):
+    main = models.CharField(max_length=100, default='')             # patient id = MRN
+    relationship = models.ForeignKey('PeopleRelations', on_delete=models.CASCADE, null=False)
+    relative = models.CharField(max_length=100, default='')         # patient id = MRN
+
+
 class Samples(models.Model):
     asn = models.CharField(max_length=50, unique=True, null=False)              # sample's unique code
-    number = models.CharField(max_length=50, blank=True, null=True)
+    container = models.CharField(max_length=200, blank=True, null=True)            # list of container JIC
     source = models.CharField(max_length=200, default='..')
     type = models.CharField(max_length=200, default='..')
+    collection_date = models.DateTimeField(auto_now=False, null=True, blank=True)
     patient_id = models.CharField(max_length=100, default=1)
     name = models.CharField(max_length=200, default='..')
-    desc = models.CharField(max_length=200, default='..')
+    desc = models.TextField(blank=True)
 
     def __unicode__(self):
         return self.name
+
+
+class SampleContainer(models.Model):
+    sample = models.ForeignKey('Samples', on_delete=models.CASCADE, null=False, default=1)
+    cid = models.CharField(max_length=20, null=True, blank=True, default=' ')
+    desc = models.CharField(max_length=200, null=True, blank=True, default=' ')
 
 
 class SampleFiles(models.Model):
@@ -75,7 +111,11 @@ class Orders(models.Model):
     type = models.ForeignKey('OrderType',related_name='OrderType', on_delete=models.CASCADE, default=1)
     provider = models.CharField(max_length=200, default='..')
     doctor = models.CharField(max_length=200, default='..')
+    doctor_phone = models.CharField(max_length=50, null=True, blank=True)
     facility = models.CharField(max_length=200, default='..')
+    owner = models.CharField(max_length=50, null=True)      # user id
+    phenotype = models.CharField(max_length=300, null=True, blank=True) # physician phenotype string
+    desc = models.TextField(blank=True)
 
     def __unicode__(self):
         return self.order_name
@@ -87,18 +127,11 @@ class Orders(models.Model):
         super(Orders, self).save()
 
 
-class Relations(models.Model):
-    rel = models.CharField(max_length=20, default='SELF')
-    rel_name = models.CharField(max_length=100, null=False, default='Self')
-
-    def __unicode__(self):
-        return self.rel_name
-
-
 class SampleOrderRel(models.Model):
     sample = models.ForeignKey('Samples', on_delete=models.CASCADE, null=False)
     order = models.ForeignKey('Orders', on_delete=models.CASCADE, null=False)
     relation = models.ForeignKey('Relations', on_delete=models.CASCADE, null=False)
+    affected_Status = models.CharField(max_length=50, default='unknown')
 
 
 class OrderGeneList(models.Model):
@@ -115,6 +148,23 @@ class OrderPhenoTypes(models.Model):
     acc = models.CharField(max_length=50, default='HP:0000000')  # hpo id
 
 
+class NoteCategory(models.Model):
+    category = models.CharField(max_length=20, default='NOTE')
+    category_name = models.CharField(max_length=50, null=False, default='NOTE')
+
+    def __unicode__(self):
+        return self.category_name
+
+
+class Notes(models.Model):
+    update_time = models.CharField(max_length=200, default=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    category = models.ForeignKey('NoteCategory', related_name='NoteCategory', on_delete=models.CASCADE, default=1)
+    order = models.ForeignKey('Orders', on_delete=models.CASCADE, blank=True, null=True, default='')
+    patient_id = models.CharField(max_length=100, default='')
+    recipient = models.ForeignKey(User, blank=True, null=True, default='')
+    note = models.TextField(blank=True)
+
+
 ############################################################################################################# old version
 
 
@@ -122,6 +172,7 @@ class PatientOrderPhenoList(models.Model):
     order = models.ForeignKey(Orders, related_name="pheno_order", on_delete=models.CASCADE, default=1)
     pheno_checklists = models.CharField(max_length=400, null=True, blank=True)   # list of phenotypes belong to order / patient " id,id,id,, "
     pheno_valuelists = models.CharField(max_length=4000, null=True, blank=True)  # list of phenotypes belong to order / patient { id, value }
+
 
 class PatientOrderPhenoType(models.Model):
     order = models.ForeignKey('Orders', on_delete=models.CASCADE, default=1)
@@ -139,13 +190,17 @@ class PhenoTypes(models.Model):
     name = models.CharField(max_length=200, default='Phenotype')
     type = models.CharField(max_length=10, choices=PHENOTYPE_TYPE, default='TEXT')
     desc = models.CharField(max_length=200, default='..')
-    image = models.ImageField(max_length=400, upload_to=settings.MEDIA_ROOT+'/phenotypes/',  null=True, blank=True)
+    image = models.ImageField(max_length=400, upload_to=settings.MEDIA_ROOT+'/Phenotypes/',  null=True, blank=True)
     geno_list = models.CharField(max_length=400, blank=True, null=True)
 
     def __unicode__(self):
         return self.name
 
 
+class Pedigree(models.Model):
+    patient_id = models.CharField(max_length=50, default='')
+    pedigree_json = models.CharField(max_length=2000, default='[]')
+    pedigree_image = models.ImageField(max_length=400, upload_to=settings.MEDIA_ROOT+'/Pedigree/',  null=True, blank=True)
 
 
 #################

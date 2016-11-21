@@ -92,7 +92,7 @@ if(window.location.hostname =='gims-dev.shc.org'){
             <td>{$ o.facility $}</td>
          
             <td>{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
-                <a href="/patient/{$ s.patient_id $}/"> {$ o.patient_id $} </a>
+                <a href="/patient/{$ o.patient_id $}/"> {$ o.patient_id $} </a>
             {% else %}
                     --
             {% endif %} </td>

@@ -1,0 +1,37 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+<style type="text/css">
+	form label{
+		width: 150px;
+		margin: 10px 20px;
+	}
+	form input, form select, form .button {
+		width: 350px;
+	}
+	form .action{
+		text-align: center;
+		margin: 20px auto;
+	}
+	form textarea{
+		width: 800px;
+		height: 100px;
+		margin-left: 150px;
+	}
+	form label[for='id_phenotype'], form label[for='id_desc']{
+		display: block;
+	}
+	/*form textarea:after { content: '\00000A';white-space: pre; }*/
+</style>
+
+ <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" />  Order : {{form.instance.order_name}} </div>
+<div>
+            <form action="/order/{{oid}}/edit/" method="post">
+                {% csrf_token %}
+                {{ form }}
+                <div class="action">
+                	<button class="button btn  btn-default" > Cancel </button> </a>
+                	<input type="submit" value="  Save " class="button btn btn-primary" /> <a href="/order/{{oid}}/" >   
+                </div>
+            </form>
+</div>            
+{% endblock content %}

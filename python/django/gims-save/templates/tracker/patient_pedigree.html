@@ -1,0 +1,177 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+{% load staticfiles %}
+        <script src="{% static 'JS/raphael.min.js' %}"></script>
+        <script src="{% static 'JS/pedigree.v1.js' %}"></script>
+
+<style type="text/css">
+            body {
+                margin: 0;
+                padding: 0;
+                text-align: center;
+            }
+            .no-display{
+                display: none;
+            }
+            #paper {
+                width: 1000px;
+                height: 1000px;
+                border: 1px solid;
+                background: #fff;
+                margin: 100px 100px;
+                z-index: 10;
+            }
+            .view-controls {
+                position: absolute;
+                left: 10px;
+                top: 10px;
+                opacity: 0.8;
+                z-index: 100000;
+                padding: 4px;
+            }
+            .info{
+                position: absolute;
+                background-color: #00A000;
+                min-width: 300px;
+                min-height: 500px;
+                z-index: 100;
+                display: none;
+            }
+            #personal div{
+                margin: 10px auto;
+            }
+            #clinical input{
+                margin: 10px auto;
+            }
+</style>
+<script type="text/javascript">
+
+ // var JsonPed = [{id:'asn1', name: 'proband', father:'asn2', mother:'3', sex:'male', carrierStatus: 'affected'},
+ //                {id:'asn2', name:'father', father:'4', sex:'male', carrierStatus: 'carrier'},
+ //                {id:'3', name:'mother', father:'6', sex:'female', carrierStatus: 'carrier'},
+ //                {id:'7', name: 'siblings', father:'asn2', mother:'3', sex:'female', carrierStatus: 'affected'},
+ //                {id:'4', name:'grandfather',father:'5', sex:'male'},{id:'5', name:'grand grand father', sex:'male'}];
+            {% autoescape off %}
+                    var JsonPed = JSON.parse('{{ pedigree }}');
+            {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+                  console.log(  'pedigree', JsonPed);
+ {% endif %}     
+            var updatedPed = [];
+            var maxID  = 0;
+            for( var i=0; i < JsonPed.length;i++){
+                maxID = (JsonPed[i].id > maxID && JsonPed[i].id <100 ) ?JsonPed[i].id : maxID;
+                if(typeof updatedPed[JsonPed[i].id] === 'undefined'){
+                    updatedPed[JsonPed[i].id] = JsonPed[i];
+                    updatedPed[JsonPed[i].id]['children'] = [];
+
+                }else{
+                    $.extend(updatedPed[JsonPed[i].id],  JsonPed[i]);
+                }
+
+                if(typeof updatedPed[JsonPed[i].father] === 'undefined') {
+                    updatedPed[JsonPed[i].father] = {
+                        id: JsonPed[i].father,
+                        sex: 'male',
+                        child: JsonPed[i].id,
+                        children: [JsonPed[i].id],
+                        carrierStatus: 'notknown'
+                    };
+                }else{
+                    updatedPed[JsonPed[i].father]['children'].push(JsonPed[i].id)
+                }
+
+                if(typeof updatedPed[JsonPed[i].mother] === 'undefined') {
+                    updatedPed[JsonPed[i].mother] = {
+                        id: JsonPed[i].mother,
+                        sex: 'female',
+                        child: JsonPed[i].id,
+                        children: [JsonPed[i].id],
+                        carrierStatus: 'notknown'
+                    };
+                }else{
+                    updatedPed[JsonPed[i].mother]['children'].push(JsonPed[i].id)
+                }
+            }
+
+            maxID++;
+
+            window.JsonPed = JsonPed;
+            window.updatedPed = updatedPed;
+            var paper, viewBox;
+
+    (jQuery(document).ready(function() {
+
+                $('#info_save').on('click', function () {
+                    var current_pid = $('#info_id').html().trim();
+                    var name = $('#name').val();
+                    console.log(updatedPed[current_pid], name);
+                    updatedPed[current_pid]['name'] = name;
+                });
+
+    }));
+
+</script>
+
+<div  class="tracker patients pedigree">
+
+    <div class="sub-title"> Patient: {{ patient.pid }} </div>
+    <button type="button" class="btn btn-default"> <a href="#" > Save </a> </button>
+ <div id="paper">
+                <div class="info">
+                    <div class="tabs" id="tabs">
+                        <ul>
+                            <li>
+                                <a href="#personal" class="personal"> Personal </a>
+                            </li>
+                            <li>
+                                <a href="#clinical" class="clinical"> Clinical </a>
+                            </li>
+                        </ul>
+
+                        <div class="tab" id="personal" class="personal">
+                            <div  >
+                                <label> ID </label>
+                                <span class="id" id="info_id" > </span>
+                            </div>
+                            <div class="name">
+                                <label> Name </label>
+                                <input class="name" id="name"  />
+                            </div>
+                            <div class="relation" id="info_relation"></div>
+                            <div> <button class="button btn-default" id="info_save" >Save </button> </div>
+                        </div>
+                        <div class="tab" id="clinical">
+                            <input type="radio" name="carrier" value="">
+                            UnKnown
+                            <input type="radio" name="carrier" value="notaffected">
+                            Not affected
+                            <input type="radio" name="carrier" value="uncertain">
+                            UnCertain
+                            <input type="radio" name="carrier" value="carrier">
+                            Carrier
+                            <input type="radio" name="carrier" value="affected">
+                            Affected
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+            <div class="view-controls">
+                <div class="view-controls-pan field-no-user-select" title="Pan">
+                    <span class="view-control-pan pan-up fa fa-fw fa-arrow-up" title="Pan up"></span><span class="view-control-pan pan-right fa fa-fw fa-arrow-right" title="Pan right"></span><span class="view-control-pan pan-down fa fa-fw fa-arrow-down" title="Pan down"></span><span class="view-control-pan pan-left fa fa-fw fa-arrow-left" title="Pan left"></span><span class="view-control-pan pan-home fa fa-fw fa-user" title="Pan home"></span>
+                </div>
+                <div class="view-controls-zoom field-no-user-select" title="Zoom">
+                    <div class="field-no-user-select zoom-button zoom-in fa fa-fw fa-search-plus" title="Zoom in"></div>
+                    <div class="field-no-user-select zoom-track" style="height: 200px;">
+                        <div class="field-no-user-select zoom-handle selected" title="Drag to zoom" style="top: 169px; position: relative;"></div>
+                    </div>
+                    <div class="field-no-user-select zoom-button zoom-out fa fa-fw fa-search-minus" title="Zoom out"></div>
+                    <div class="field-no-user-select zoom-crt-value"></div>
+                </div>
+            </div>
+
+    </div>
+</div>
+{% endblock content %}

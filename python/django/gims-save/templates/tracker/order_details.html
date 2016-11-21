@@ -1,10 +1,7 @@
 {% extends "tracker/tracker_base.html" %}
 {% block content %}
 
-
 <style type="text/css">
-
-
     .tree.trio {
         margin:auto;
         position:relative;
@@ -14,10 +11,6 @@
     }
 .samplelist {
     cursor: pointer;
-}
- button{
-    margin: 5px auto;
-    float: right;
 }
 .relation-tree{
     width: 500px;
@@ -131,6 +124,9 @@
 .sibling2 {
     left: 360px;    
 }
+.sibling3 {
+    left: 470px;    
+}
 .relation-tree .line{
     position: absolute;
     border: solid 2px black;
@@ -140,8 +136,43 @@
     left: 150px;
 
 }
+.physician-phenotypes{
+    vertical-align: top;
+    display: flex;
+    margin: 10px auto;
+}
+.physician-phenotypes label{
+    width: 100px;
+}
+.physician-phenotypes textarea{
+    width: 400px;
+}
 .genelist .name{
     text-transform: capitalize;
+}
+.popup, .notes{
+   position: fixed;
+    width: 95%;
+    left: 50px;
+    /*max-height: 500px;*/
+    overflow: auto;
+    background-color: #ccc;
+    border-radius: 10px;
+    display: none;
+    z-index: 50;
+
+}
+.popup table{
+    margin:30px auto;
+    background-color: rgba(181, 188, 214, 0.6);
+    
+    width: 95%;
+}
+#popup td{
+    padding:5px;
+}
+.popup table td.date{
+    width: 150px;
 }
 </style>
 
@@ -208,10 +239,16 @@
                     $('.sibling').css('display', 'none');
                 }else{
                     $('.sibling1 .patient').html($scope.sibling[0].patient_id);
-                    if(typeof s[1] == 'undefined'  ){
+                    if(typeof $scope.sibling[1] == 'undefined'  ){
                          $('.sibling2').css('display', 'none');
                     }else{
                         $('.sibling2 .patient').html($scope.sibling[1].patient_id);
+                    }
+                    if(typeof $scope.sibling[2] == 'undefined'  ){
+                         $('.sibling3').css('display', 'none');
+                    }else{
+                        $('.sibling3 .patient').html($scope.sibling[2].patient_id);
+                        $('.relation-tree').css('margin-left', '0');
                     }
                 }
                 if($scope.proband  <=0){
@@ -226,10 +263,83 @@ if(window.location.hostname =='gims-dev.shc.org'){
 
  }				
 
-        
+    $('#btn-history').on('click', function () {
+        // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
+        $.ajax({
+            url:'/mybackend/get_log/order/',
+            type:'json',
+            method:'POST',
+            data:{'oid': $scope.orders[0].order_id},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> update  </th><th> action</th><th> By </th></thead><tbody>';
+                for(var i=0; i<json_data.length; i++){
+                    hHtml += '<tr><td class="date">'+json_data[i].fields.update_time+
+                    '</td><td>'+json_data[i].fields.action+'</td><td>'+json_data[i].fields.user_id+'</td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+
+            }
+         });
+    });
+    $('#btn-notes').on('click', function () {
+        // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
+        $.ajax({
+            url:'/mybackend/get_notes/',
+            type:'json',
+            method:'POST',
+            data:{'oid': $scope.orders[0].order_id},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> date </th><th> category </th><th> Note </th><th>  recipient </th></thead><tbody>';
+                var urgent='';
+                var recipient='';
+                for(var i=0; i<json_data.length; i++){
+                    urgent = (json_data[i].category.trim() == 'Urgent Matter')? 'danger' : '';
+                    recipient = (typeof json_data[i].recipient ==='undefined')? '' : json_data[i].recipient;
+                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="date">'+json_data[i].update_time+
+                    '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+recipient+'</td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+                $('.note-detail').on('click', function() {
+                    console.log('this note', this.id);
+                    // body...
+                })
+            }
+         });
+    });
+
+
 
     }]);
-	  
+	
+$(function () {
+    'use strict';
+
+    $(".popup").draggable();
+});
          
 
 
@@ -239,18 +349,40 @@ if(window.location.hostname =='gims-dev.shc.org'){
 
 
 
-    <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" />  Order : {$ orders[0].order_name $} </div>
+    <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" />  Order : {$ orders[0].order_name $} 
+     <a href="/order/{$ orders[0].orderid $}/Notes/" target="_new"  ><button class="btn btn-primary btn-sm right-button "> Add Notes </button> </a>
+     <button class="btn btn-primary btn-sm right-button "  id="btn-notes">Notes </button> 
+    <button class="btn btn-primary btn-sm  right-button" id="btn-history"> Update History </button> 
+
+
+      <a href="/order/{$ orders[0].orderid $}/edit/"><button class="btn btn-primary btn-sm  right-button"> Edit Order Info </button> </a> 
+
+      </div>
+    
+    <div class="popup">
+        <button class="close" onclick="$('.popup').css('display', 'none');">X</button>
+        <div id="popup"> </div> 
+    </div>
+
+    <div class="notes">
+        <button class="close" onclick="$('.notes').css('display', 'none');">X</button>
+
+        <div id="notes"> </div> 
+    </div>
+
     <div class="details-top">
         <div class="main-left text-center">
             <div> <div class="label"> Type </div> <div class="value">{$ orders[0].type $} </div></div>
-            <!-- <div> <div class="label"> Create  Date </div> <div class="value">{$ orders[0].order_date $} </div></div> -->
+
             <div> <div class="label"> Due  Date </div> <div class="value">{$ orders[0].due_date $}</div></div>
             <div> <div class="label"> Status </div> <div class="value">{$ orders[0].status_name $}</div> </div>
+            <div> <div class="label"> Assignee </div> <div class="value">{$ orders[0].ownername $}</div> </div>
         </div>
         <div class="main-right text-ceneter">
             <div> <div class="label"> Ordering Provider </div> <div class="value">{$ orders[0].provider $} </div></div>
             <div> <div class="label"> Ordering Facility </div> <div class="value">{$ orders[0].facility $}</div></div>
             <div> <div class="label"> Ordering Physician  </div> <div class="value">{$ orders[0].doctor $}</div> </div>
+             <div> <div class="label">  Physician Contact  </div> <div class="value">{$ orders[0].doctor_phone $}</div> </div>
         </div>
     </div>
 
@@ -258,13 +390,14 @@ if(window.location.hostname =='gims-dev.shc.org'){
         <div class="main-left">
             <div  class="sub-sub-title"> Related Samples 
                 {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
-                         <a href="{% url 'add_SampleOrderRel' %}?oid={$ orders[0].orderid $}"><button class="btn btn-primary btn-sm"> Add Samples </button> </a> 
+                         <a href="{% url 'add_SampleOrderRel' %}?oid={$ orders[0].orderid $}"><button class="btn btn-primary btn-sm  right-button"> Add Samples </button> </a> 
 
                 {% endif %}
             </div>
         	<table class="table table-bordered table-striped table-hover">
         		<tr>
         			<th> Sample </th>
+                    <th> Container </th>
                     <th> Source </th>
                     <th> Relations </th>
                     <th> Patient ID </th>
@@ -272,6 +405,7 @@ if(window.location.hostname =='gims-dev.shc.org'){
         		<tr ng-repeat="o in orders"  id='{$ o.id $}' class="samplelist">
 
         			<td><a href="/sample/{$ o.sample_id $}/">{$ o.asn $}</a></td>
+                    <td>{$ o.container $}</td>
                     <td>{$ o.source $}</td>
                     <td> 
                     <a href="{% url 'add_SampleOrderRel' %}?oid={$ orders[0].orderid $}&sid={$ o.sample_id $}&rid={$ o.relation_id $}">{$ o.rel_name $} </a>
@@ -310,6 +444,10 @@ if(window.location.hostname =='gims-dev.shc.org'){
                     <div class="patient"> </div>  
                     <div class="image"> </div> 
                 </div>
+                <div class="sibling sibling3"> 
+                    <div class="patient"> </div>  
+                    <div class="image"> </div> 
+                </div>
                 <div class="proband">
                      <div class="patient"> </div>  
                      <div class="image"> </div>
@@ -321,16 +459,22 @@ if(window.location.hostname =='gims-dev.shc.org'){
         </div>
        <div class="main-right">
 
-            <div>
+            <div class="phenotypes">
                 <div  class="sub-sub-title">  Phenotypes 
-                    {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
-                             <a href="/order/{$ orders[0].orderid $}/phenotypes/"><button class="btn btn-primary btn-sm"> Add Phenotypes </button> </a> 
+
+                    
+                </div>
+                    <div class="physician-phenotypes text-center">
+                        <label> Physician Phenotypes</label>
+                        <textarea readonly="readonly" > {$ orders[0].phenotype $} </textarea>
+                     </div>
+            {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
+                             <a href="/order/{$ orders[0].orderid $}/phenotypes/"><button class="btn btn-primary btn-sm right-button"> Add Phenotypes </button> </a> 
 
                     {% endif %}
-                </div>
                         <table class="table table-bordered table-striped table-hover">
                         <tr>
-                            <th> HPO Code </th>
+                            <th> HPO ID </th>
                             <th> Name </th>
                         </tr>
 
@@ -350,12 +494,19 @@ if(window.location.hostname =='gims-dev.shc.org'){
 
                         {% endfor %}
                         </table>
+                        {% if phenolists %}
+                 <div  class="clearfix"> 
+                   <a href="/order/{$ orders[0].orderid $}/Diseases/">
+                        <button class="btn btn-primary btn-sm"> Associated Disease List By Score  </button> </a> 
+                    </div>
+                    {% endif %}
             </div>
+
             <div class="genelist">
 
                 <div  class="sub-sub-title">  Genelists 
                         {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
-                                 <a href="/PatientOrderGeneList/{$ orders[0].orderid $}/"><button class="btn btn-primary btn-sm"> Add Genelist </button> </a> 
+                                 <a href="/PatientOrderGeneList/{$ orders[0].orderid $}/"><button class="btn btn-primary btn-sm right-button"> Add Genelist </button> </a> 
 
                         {% endif %}
                     </div>

@@ -31,13 +31,19 @@ $(function() {
     margin-left: 20px;
     font-weight: bold;
   }
+  img.hidden-xs{
+    display: none;
+  }
+  .news .container-fluid{
+    margin-top: 0;
+  }
 </style>
 <div class="main_body col-md-8">
     <div class="announce ">
         <div class="title"> <h4>Announcement</h4> </div>
         <div class="message"> {{announce}}   </div>
     </div>
-    <div class="news  hidden-xs">
+    <div class="news">
          <div class="title"> <h4>News</h4> </div>
         <div class="media_slider_main_content">
                 <div id="maindiv"> 
@@ -50,7 +56,7 @@ $(function() {
     </div>
 </div>
 <div class="login text-center  col-md-4">
-            <h4  class="text-center">Login to GIMPDEV </h4>
+            <h4  class="text-center">Login to GIMS </h4>
 
             {% if errors %}
               <div class="alert alert-danger" role="alert">

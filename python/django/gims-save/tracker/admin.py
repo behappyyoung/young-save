@@ -2,7 +2,8 @@ from django.contrib import admin
 from django import forms
 
 # Register your models here.
-from .models import TrackingLog, Samples, Orders, OrderStatus, OrderType, Relations, SampleOrderRel, SampleFiles, Patients, PhenoTypes, PatientOrderPhenoList, PatientOrderPhenoType
+from .models import TrackingLog, Samples, Orders, OrderStatus, OrderType, Relations, SampleOrderRel, SampleFiles\
+    , Patients, PeopleRelations, PhenoTypes, PatientOrderPhenoList, PatientOrderPhenoType, NoteCategory, Notes
 
 
 class TrackingAdmin(admin.ModelAdmin):
@@ -13,10 +14,12 @@ class TrackingAdmin(admin.ModelAdmin):
 
 
 class SampleAdmin(admin.ModelAdmin):
-    list_display = ['asn', 'number', 'type']
+    list_display = ['asn', 'container', 'type']
+
 
 class SampleFileAdmin(admin.ModelAdmin):
     list_display = ['sample', 'channel_name', 'file_location', 'loom_id', 'file_type']
+
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['order_name', 'patient_id', 'order_date', 'due_date', 'status']
@@ -39,7 +42,11 @@ class SORelationsAdmin(admin.ModelAdmin):
 
 
 class PatientsAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'mrn', 'dob', 'race', 'sex']
+    list_display = ['first_name', 'last_name', 'mrn', 'dob', 'ethnicity', 'sex']
+
+
+class PeopleRelationsAdmin(admin.ModelAdmin):
+    list_display = ['rel', 'rel_name', 'back_relation_male', 'back_relation_female']
 
 
 class PhenoModelForm(forms.ModelForm):
@@ -57,6 +64,14 @@ class PhenoAdmin(admin.ModelAdmin):
 class PatientOrderPhenoListAdmin(admin.ModelAdmin):
     list_display =  [ 'order', 'pheno_checklists', 'pheno_valuelists']
 
+
+class NoteCategoryAdmin(admin.ModelAdmin):
+    list_display = ['category', 'category_name']
+
+
+class NotesAdmin(admin.ModelAdmin):
+    list_display = ['category','order', 'patient_id', 'recipient', 'note']
+
 # class PatientOrderPhenoTypeAdmin(admin.ModelAdmin):
 #     list_display = ['patient', 'order', 'phenotype']
 
@@ -71,3 +86,6 @@ admin.site.register(SampleOrderRel, SORelationsAdmin)
 admin.site.register(Patients, PatientsAdmin)
 admin.site.register(PhenoTypes, PhenoAdmin)
 admin.site.register(PatientOrderPhenoList, PatientOrderPhenoListAdmin)
+admin.site.register(NoteCategory, NoteCategoryAdmin)
+admin.site.register(Notes, NotesAdmin)
+admin.site.register(PeopleRelations, PeopleRelationsAdmin)

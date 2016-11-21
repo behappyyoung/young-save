@@ -44,7 +44,7 @@
 	<table class="table table-bordered table-striped table-hover">
 		<tr>
 			<th> ASN </th>
-<!-- 			<th> Number </th> -->
+			<th> Container # </th>
 			<th> Source </th>
 			<th> <a href="#" ng-click="sortType = 'type'; sortReverse = !sortReverse"> Type 
         <span ng-show="sortType == 'type' && !sortReverse" class="fa fa-caret-down"></span>
@@ -57,7 +57,7 @@
 		</tr>
 		<tr ng-repeat="s in samples | filter:searchs | orderBy:sortType:sortReverse"  id='{$ s.id $}'  ng-click="onSampleClick(s.id);">
 			<td>{$ s.asn $}</td>
-			<!-- <td>{$ s.number $}</td> -->
+			<td>{$ s.container $}</td>
 			<td>{$ s.source $}</td>
 			<td>{$ s.type $}</td>
             
