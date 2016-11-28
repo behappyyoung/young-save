@@ -99,38 +99,66 @@
 
                 </div>
                 <div class="panel">
-                    <div class="title"> Quick Link </div>
+                    <div class="title"> Quick Links </div>
 
                     <div class="menu">
                         <ul>
                         <li>
-                            {% if most_access.0.url == '/' %}
-                                <a href="{{ most_access.1.url }}"> 
-                                {% if  most_access.1.url|length < 20 %}
-                                        {{ most_access.1.url|slice:"1:"  }}
+                                <a href="{{ most_access.0.url }}">
+                                {% if most_access.0.result != None and most_access.0.result != 'redirect' %}
+                                     {% if  most_access.0.result|length < 20 %}
+                                        {{ most_access.0.result|slice:"0:"  }}
+                                    {% else %}
+                                            {{ most_access.0.result| slice:"0:15" }} ...
+                                    {% endif %}
                                 {% else %}
-                                        {{ most_access.1.url| slice:"1:15" }} ...
+                                    {% if  most_access.0.url|length < 20 %}
+                                        {{ most_access.0.url|slice:"1:-1"  }}
+                                    {% else %}
+                                            {{ most_access.0.url| slice:"1:15" }} ...
+                                    {% endif %}
                                 {% endif %}
 
-                                </a>
-                                {% if  most_access.1.url != last_access.0.url %}
-                                   </li><li> <a href="{{ last_access.0.url }}"> 
+                                
+                                 </a>
+                        </li>
+                        <li> 
+                                 {% if  most_access.0.url != last_access.0.url %}
+                                   <a href="{{ last_access.0.url }}"> 
+                                   {% if last_access.0.result != None and last_access.0.result != 'redirect' and last_access.0.result != ''%}
+                                       {% if  last_access.0.result|length < 20 %}
+                                            {{ last_access.0.result|slice:"0:"  }}
+                                        {% else %}
+                                                {{ last_access.0.result| slice:"0:15" }} ...
+                                        {% endif %}
+                                   {% else %}
                                         {% if  last_access.0.url|length < 20 %}
-                                                {{ last_access.0.url|slice:"1:" }}
+                                                {{ last_access.0.url|slice:"1:-1" }}
                                         {% else %}
                                                 {{ last_access.0.url| slice:"1:15" }} ...
                                         {% endif %}
+                                    {% endif %}    
+                                    </a>
+                                {% else %}
+                                    <a href="{{ most_access.1.url }}">                                 
+                                    {% if most_access.1.result != None and most_access.1.result != 'redirect' and most_access.1.result != '' %}
+
+                                         {% if  most_access.1.result|length < 20 %}
+                                            {{ most_access.1.result|slice:"0:-1"  }}
+                                        {% else %}
+                                                {{ most_access.1.result| slice:"0:15" }} ...
+                                        {% endif %}
+                                    {% else %}
+                                        {% if  most_access.1.url|length < 20 %}
+                                                {{ most_access.1.url|slice:"1:-1"  }}
+                                        {% else %}
+                                                {{ most_access.1.url| slice:"1:15" }} ...
+                                        {% endif %}
+                                    {% endif %}
                                     </a>
                                 {% endif %}
-                            {% else %}
-                                <a href="{{ most_access.0.url }}">
-                                 {% if  most_access.0.url|length < 20 %}
-                                        {{ most_access.0.url|slice:"1:"  }}
-                                {% else %}
-                                        {{ most_access.0.url| slice:"1:15" }} ...
-                                {% endif %}
-                                 </a>
-                            {% endif %}
+
+
                      </li>
                      </ul>
                         

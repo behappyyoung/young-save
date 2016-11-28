@@ -25,12 +25,24 @@ def custom_proc(request):
 
 def getPatientInfo(pid, what):
     patient = Patients.objects.get(pid=pid)
-    return getattr(patient, what)
+    if isinstance(what, list):
+        result = []
+        for i in what:
+            result.append(getattr(patient, i))
+    else:
+        result = getattr(patient, what)
+    return result
 
 
 def getOrderInfo(oid, what):
     order = Orders.objects.get(id=oid)
-    return getattr(order, what)
+    if isinstance(what, list):
+        result = []
+        for i in what:
+            result.append(getattr(order, i))
+    else:
+        result = getattr(order, what)
+    return result
 
 
 def getOrderStatus(sid):
@@ -134,9 +146,10 @@ def order_details(request, oid):
     c_loomlog = loomLog.objects.using('logs').filter(relOrder=oname)
     jsonstring_loomlog = serializers.serialize('json', c_loomlog,
                                                fields=('analysisID', 'workflowID', 'relSample', 'acc_time', 'loomResponse'))
-    logging(request, 'access')
+    title = 'Order : ' + oname
+    logging(request, 'access', title)
     return render(request, 'tracker/order_details.html',
-                  {'orders':json.dumps(c_orders), 'phenolists' : c_phenolist, 'workflows': jsonstring_loomlog, 'genelists':genelist},
+                  {'orders':json.dumps(c_orders), 'phenolists' : c_phenolist, 'workflows': jsonstring_loomlog, 'genelists':genelist, 'title': title},
                   context_instance=RequestContext(request, processors=[custom_proc]))
 
 
@@ -249,11 +262,16 @@ def patient_details(request, pid):
     patient = Patients.objects.get(pid=pid)
     samples = Samples.objects.filter(patient_id=pid).order_by('asn')
     orders = Orders.objects.filter(patient_id=pid)
+    family_list = []
     try:
         # family = PatientRelations.objects.filter(main=pid).exclude(relationship=7)
         family = PatientRelations.objects.filter(main=pid)
-    except:
-        family = []
+        for f in family:
+            ethnicity, mrn = getPatientInfo(f.relative, ['ethnicity', 'mrn'])
+            family_list.append({'relative': f.relative, 'relationship': f.relationship, 'ethnicity': ethnicity, 'mrn': mrn})
+    except Exception as e:
+        messages.error(request, e.message)
+
     oids=[]
     for order in orders:
         oids.append(int(order.id))
@@ -262,9 +280,10 @@ def patient_details(request, pid):
         phenotypes = OrderPhenoTypes.objects.filter(order_id__in=oids)
     else:
         phenotypes =[]
-    logging(request, 'access')
+    title = 'Patient : ' + pid
+    logging(request, 'access', title)
     return render(request, 'tracker/patient_details.html',
-                  {'patient':patient, 'samples':samples, 'phenotypes': phenotypes,'orders':orders, 'family': family})
+                  {'patient':patient, 'samples':samples, 'phenotypes': phenotypes,'orders':orders, 'family': family_list, 'title': title})
 
 
 @login_required(login_url='/saml/')

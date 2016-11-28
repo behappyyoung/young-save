@@ -26,7 +26,7 @@ class PatientRelationsForm(forms.ModelForm):
         model = PatientRelations
         fields = '__all__'
         widgets={
-            'relative': Select(choices=( (x.pid, x.first_name + ' '+  x.last_name) for x in CHOICES )),
+            'relative': Select(choices=( (x.pid, x.first_name + ' '+  x.last_name + ' ( MRN : ' + x.mrn + ' ) ') for x in CHOICES )),
         }
 
 

@@ -15,6 +15,7 @@ class WorkflowManager(models.Manager):          # override manager to show only 
     def get_queryset(self):
         return super(WorkflowManager, self).get_queryset().filter(status='A')
 
+
 class WorkflowType(models.Model):
     type = models.CharField(max_length=20, null=False)
     type_name = models.CharField(max_length=50, null=False)
