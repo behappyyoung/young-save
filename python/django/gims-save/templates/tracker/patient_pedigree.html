@@ -2,7 +2,7 @@
 {% block content %}
 {% load staticfiles %}
         <script src="{% static 'JS/raphael.min.js' %}"></script>
-        <script src="{% static 'JS/pedigree.v1.js' %}"></script>
+        <script src="{% static 'JS/pedigree.v2.js' %}"></script>
 
 <style type="text/css">
             body {
@@ -55,7 +55,7 @@
                     var JsonPed = JSON.parse('{{ pedigree }}');
             {% endautoescape %}
 {% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
-                  console.log(  'pedigree', JsonPed);
+                  console.log(  'pedigree', JsonPed, JSON.stringify(JsonPed));
  {% endif %}     
             var updatedPed = [];
             var maxID  = 0;

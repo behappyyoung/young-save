@@ -13,11 +13,15 @@
     display: flex;
 }
 #pedigree_image {
-    margin: 10px;
-    width: 100px;
-    height: 100px;
+    margin: 10px auto;
+    width: 200px;
+    height: 200px;
     background-image: url('/static/IMAGES/no-entry');
     background-size: cover;
+}
+.fileupload{
+    margin: 30px auto;
+    text-align: center;
 }
 .ui-dialog .ui-dialog-content{
     width: 650px ;
@@ -108,7 +112,7 @@
                 //file exists
                 console.log('file exists');
 
-                $('#pedigree_image').html('<a class="pimage" href="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'"  width=100 height=100/> </a>');
+                $('#pedigree_image').html('<a class="pimage" href="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'"  width=200 height=200/> </a>');
                 $('#label-fileupload').html('Update Pedigree Image');
             }
             });
@@ -143,15 +147,18 @@
                 var json_data = JSON.parse(data);
                 console.log('success', data, json_data);
                 window.json_data = json_data;
-                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> Order Name</th><th> date </th><th> category </th><th> Note </th><th> recipient</th></thead><tbody>';
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> Order Name</th><th> date </th><th> category </th><th> Note </th><th> By </th><th> recipients</th></thead><tbody>';
                 var urgent='';
-                var recipient;
-
+                var recipients;
+                var writer;
+                var order_name;
                 for(var i=0; i<json_data.length; i++){
                     urgent = (json_data[i].category.trim() == 'Urgent Matter')? 'danger' : '';
-                    recipient = (typeof json_data[i].recipient ==='undefined')? '' : json_data[i].recipient;
-                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="order_name">'+json_data[i].order_name+'</td><td class="date">'+json_data[i].update_time+
-                    '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+recipient+'</td></tr>';
+                    recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null)? '' : json_data[i].recipients;
+                    writer = (typeof json_data[i].writer ==='undefined' || json_data[i].writer === null )? '' : json_data[i].writer;
+                     order_name = (typeof json_data[i].order_name ==='undefined' || json_data[i].order_name === null )? ' -- ' : json_data[i].order_name;
+                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="order_name">'+order_name+'</td><td class="date">'+json_data[i].update_time+
+                    '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+writer+'</td><td>'+recipients+'</td></tr>';
                 }
                 $('#popup').html(hHtml);
                 $('.popup').css('display', 'block');
@@ -183,14 +190,16 @@
                 var json_data = JSON.parse(data);
                 console.log('success', data, json_data);
                 window.json_data = json_data;
-                var hHtml = '<div  class="sub-title"> Notes for '+json_data[0].order_name+' </div><table class="table table-bordered table-striped table-hover"><thead><th> date </th><th> category </th><th> Note </th><th> recipient</th> <th> </th></thead><tbody>';
+                var hHtml = '<div  class="sub-title"> Notes for '+json_data[0].order_name+' </div><table class="table table-bordered table-striped table-hover"><thead><th> date </th><th> category </th><th> Note </th><th> By </th><th> recipients</th> <th> </th></thead><tbody>';
                 var urgent='';
-                var recipient;
+                var recipients;
+                var writer;
                 for(var i=0; i<json_data.length; i++){
                     urgent = (json_data[i].category.trim() == 'Urgent Matter')? 'danger' : '';
-                    recipient = (typeof json_data[i].recipient ==='undefined')? '' : json_data[i].recipient;
+                    recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null)? '' : json_data[i].recipients;
+                    writer = (typeof json_data[i].writer ==='undefined' || json_data[i].writer === null )? '' : json_data[i].writer;
                     hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="date">'+json_data[i].update_time+
-                    '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+recipient+'</td><td class="action"><a href="/order/'+oid+'/notes/" target="_new" >Add Notes</a></td></tr>';
+                    '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+writer+'</td><td>'+recipients+'</td><td class="action"><a href="/order/'+oid+'/notes/" target="_new" >Add Notes</a></td></tr>';
                 }
                 $('#popup').html(hHtml);
                 $('.popup').css('display', 'block');
@@ -207,6 +216,7 @@
 // var family = JSON.parse('{{family}}'.replace(/&#39;/g, '"').replace(/u"/g, '"').replace(/&lt;/g, '{').replace(/&gt;/g, '}'));
 var family=[];
 var proband={'mrn': '{{patient.pid}}'};
+
  {% for f in family %}
         family.push({relative:'{{ f.relative }}', relationship: '{{ f.relationship }}', ethnicity: '{{ f.ethnicity }}', mrn: '{{ f.mrn }}'});
  {% endfor %}
@@ -254,7 +264,7 @@ var proband={'mrn': '{{patient.pid}}'};
         <div class="flex">
             
             <div class="main-left">
-                <div  class="sub-sub-title"> Relatives  
+                <div  class="sub-sub-title"> Family  
                     <a href="/patient/{{patient.pid}}/relationship/"><button class="btn btn-primary btn-sm  right-button"> Add Relative </button> </a> 
                  </div>
                  <table class="table table-bordered table-striped table-hover">
@@ -270,11 +280,14 @@ var proband={'mrn': '{{patient.pid}}'};
                         </tr>
 
                         {% for f in family %}
+
                         <tr class="samplelist">
 
 
                              <td><a href="/patient/{{ f.relative }}/"> {{ f.relative }} </a></td>
-                             <td>{{ f.relationship }}</td>
+                             <td>
+                                <a href="/patient/{{patient.pid}}/relationship/?main={{patient.pid}}&relative={{ f.relative }}&relationship={{ f.relationship.id }}"> {{ f.relationship }} </a> 
+                            </td>
                              <td>{{ f.ethnicity }}</td>
                             <td>{{ f.mrn }}</td>
 
@@ -287,12 +300,12 @@ var proband={'mrn': '{{patient.pid}}'};
             </div>
             <div class="main-right">
                 <div  class="sub-sub-title"> Pedigree </div>
-                <!-- <div> <a href="/patient/{{ patient.pid }}/pedigree/"> Show Pedigree Chart </a></div> -->
+                <div> <a href="/patient/{{ patient.pid }}/pedigree/"> Show Pedigree Chart </a></div>
                 <br />
 
                 <div id="pedigree_image">   </div> 
                 <!-- <div id="pedigree_image_dialog"> <img class="pimage" src="" />  </div>  -->
-                <div>
+                <div class="fileupload">
 
                       <label for="fileupload" class="btn btn-success fileinput-button" id="label-fileupload"> Add Pedigree Image</label>
                       <input class="btn btn-success fileinput-button" id="fileupload" type="file" style="visibility: hidden;" name="files" / >

@@ -15,6 +15,10 @@ class OrderForm(forms.ModelForm):
         widgets={
             'patient_id': forms.TextInput(attrs={'readonly': 'readonly'}),
             'order_name': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'order_date': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'due_date': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'complete_date': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'updated': forms.TextInput(attrs={'readonly': 'readonly'}),
             'owner':  Select(choices=( (x.id, x.username) for x in CHOICES )),
             'phenotype': forms.Textarea(),
         }
@@ -27,6 +31,18 @@ class PatientRelationsForm(forms.ModelForm):
         fields = '__all__'
         widgets={
             'relative': Select(choices=( (x.pid, x.first_name + ' '+  x.last_name + ' ( MRN : ' + x.mrn + ' ) ') for x in CHOICES )),
+        }
+
+
+class PatientRelationsEditForm(forms.ModelForm):
+    class Meta:
+        CHOICES = Patients.objects.all()
+        model = PatientRelations
+        fields = '__all__'
+        widgets={
+            'main': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'relative': forms.TextInput(attrs={'readonly': 'readonly'}),
+
         }
 
 
@@ -65,13 +81,14 @@ class GeneListsForm(forms.ModelForm):
         fields = ('category', 'name','list', 'desc')
 
 
-class NotesForm(forms.ModelForm):
+class NotesPatientForm(forms.ModelForm):
     class Meta:
         CHOICES = UserProfile.objects.all()
         model = Notes
-        fields = ('order', 'category','recipient', 'update_time', 'note', 'patient_id')
+        fields = ('patient_id', 'category','recipients', 'update_time', 'note')
         widgets = {
-            'recipient': Select(choices=itertools.chain( ((x.user_id, x.username) for x in CHOICES) , [("",'None')])),
+            'recipients': forms.SelectMultiple(
+                choices=itertools.chain(((x.user_id, x.username) for x in CHOICES))),
             'update_time': forms.TextInput(attrs={'readonly': 'readonly'}),
             'patient_id': forms.TextInput(attrs={'readonly': 'readonly'})
         }
@@ -81,10 +98,11 @@ class NotesOrderForm(forms.ModelForm):
     class Meta:
         CHOICES = UserProfile.objects.all()
         model = Notes
-        fields = ('order', 'category','recipient', 'update_time', 'note', 'patient_id')
+        fields = ('order', 'patient_id', 'category', 'recipients', 'note', 'update_time')
         widgets = {
             'order': forms.Select(attrs={'disabled': 'disabled'}),
-            'recipient': Select(choices=itertools.chain( ((x.user_id, x.username) for x in CHOICES) , [("",'None')])),
+            'recipients': forms.SelectMultiple(
+                choices=itertools.chain(((x.user_id, x.username) for x in CHOICES))),
             'update_time': forms.TextInput(attrs={'readonly': 'readonly'}),
             'patient_id': forms.TextInput(attrs={'readonly': 'readonly'})
         }

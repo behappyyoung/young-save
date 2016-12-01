@@ -23,11 +23,11 @@ class Patients(models.Model):
     first_name = models.CharField(max_length=50,  null=True, blank=True)
     mrn = models.CharField(max_length=100, unique=True, null=False)           # patient ID for now
     dob = models.DateField(null=True, blank=True)
-    address = models.CharField(max_length=200,  null=True, blank=True)
-    phone = models.CharField(max_length=20,  null=True, blank=True)
-    work_phone = models.CharField(max_length=200,  null=True, blank=True)
-    ethnicity = models.CharField(max_length=50,  null=True, blank=True)
-    sex = models.CharField(max_length=10,  null=True, blank=True)
+    address = models.CharField(max_length=200,  null=True, blank=True, default='')
+    phone = models.CharField(max_length=20,  null=True, blank=True, default='')
+    work_phone = models.CharField(max_length=200,  null=True, blank=True, default='')
+    ethnicity = models.CharField(max_length=50,  null=True, blank=True, default='')
+    sex = models.CharField(max_length=10,  null=True, blank=True, default='')
 
     def __unicode__(self):
         return self.mrn
@@ -157,11 +157,13 @@ class NoteCategory(models.Model):
 
 
 class Notes(models.Model):
+    writer = models.ForeignKey(User, related_name='writer', blank=True, null=True, default='')
     update_time = models.CharField(max_length=200, default=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     category = models.ForeignKey('NoteCategory', related_name='NoteCategory', on_delete=models.CASCADE, default=1)
     order = models.ForeignKey('Orders', on_delete=models.CASCADE, blank=True, null=True, default='')
     patient_id = models.CharField(max_length=100, default='')
-    recipient = models.ForeignKey(User, blank=True, null=True, default='')
+    recipient = models.ForeignKey(User, related_name='recipient', blank=True, null=True, default='')
+    recipients = models.CharField(max_length=400, blank=True, null=True, default='')
     note = models.TextField(blank=True)
 
 

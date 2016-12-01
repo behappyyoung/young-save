@@ -40,24 +40,75 @@
                          }                           
                  {% endautoescape %}
 
+                     $scope.onSampleClick= function(sid){
+                     	window.location.href = '/sample/'+sid+'/';
+                    };  
+				$scope.filter_father = function(order) {
+					return order.relation_id == "2";
+				};
+ 
+				$scope.father=[];
+				$scope.mother=[];
+                $scope.sibling=[];
+				$scope.siblings=[];
+				$scope.proband='';
+
+				for(var i=0; i< $scope.orders.length;i++){
+					if($scope.orders[i].rel == 'FATHER'){
+						$scope.father.push($scope.orders[i]);
+					}
+					else if($scope.orders[i].rel == 'MOTHER'){
+						$scope.mother.push($scope.orders[i]);
+                    }else if($scope.orders[i].rel == 'SIBLING'){
+                        $scope.sibling.push($scope.orders[i]);
+					}else if($scope.orders[i].rel == 'PROBAND'){
+						$scope.proband = $scope.orders[i];
+                        console.log(i, $scope.orders[i], $scope.proband);
+					}
+				}
+
+                if($scope.father.length <=0){
+
+                    $('.father').css('display', 'none');
+                }else{
+                    $scope.father[0].url = '/sample/'+$scope.father[0].id+'/';  
+                    $scope.father[0].label = "Father";
+                    $('.father').css('display', 'block');
+                    $('.father .patient').html($scope.father[0].patient_id);
+                }
+                if($scope.mother  <=0){
+                    $('.mother').css('display', 'none');
+                }else{
+                    $scope.mother[0].url = '/sample/'+$scope.mother[0].id+'/';  
+                    $('.mother .patient').html($scope.mother[0].patient_id);   
+                }
+                if($scope.sibling  <=0){
+                    $('.sibling').css('display', 'none');
+                }else{
+                    $('.sibling1 .patient').html($scope.sibling[0].patient_id);
+                    if(typeof $scope.sibling[1] == 'undefined'  ){
+                         $('.sibling2').css('display', 'none');
+                    }else{
+                        $('.sibling2 .patient').html($scope.sibling[1].patient_id);
+                    }
+                    if(typeof $scope.sibling[2] == 'undefined'  ){
+                         $('.sibling3').css('display', 'none');
+                    }else{
+                        $('.sibling3 .patient').html($scope.sibling[2].patient_id);
+                        $('.relation-tree').css('margin-left', '0');
+                    }
+                }
+                if($scope.proband  <=0){
+
+                    $('.proband').css('display', 'none');
+                }else{
+                    $scope.proband.url = '/sample/'+$scope.proband.id+'/';
+                    $('.proband .patient').html($scope.proband.patient_id); 
+                }
 if(window.location.hostname =='gims-dev.shc.org'){
                 console.log('orders', $scope.orders, 'phenolists', $scope.phenolists, 'f', $scope.father, 'm', $scope.mother,'proband', $scope.proband, 'sibling', $scope.sibling);
 
- }	
-     }]);
-
-var family=[];
-{% autoescape off %}
-        var orders = {{orders}};                     
-{% endautoescape %}
-
-var proband={'mrn': '{{patient.pid}}'};
- for(var i=0 ; i<orders.length; i++){
-
-        family.push({relative:orders[i].patient_id, relationship: orders[i].rel_name, ethnicity: '', mrn: orders[i].patient_id});
-
-}
-{% include "com/js_relation_tree.js" %}
+ }				
 
     $('#btn-history').on('click', function () {
         // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
@@ -127,7 +178,7 @@ var proband={'mrn': '{{patient.pid}}'};
 
 
 
-
+    }]);
 	
  
 

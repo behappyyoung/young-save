@@ -10,11 +10,14 @@
     position: absolute;
     /*background-color: wheat;*/
     width: 100px;
-    height: 100px;
+    /*height: 100px;*/
     border: 2px solid #dddddd;
     /*background: #eee url(images/ui-bg_highlight-soft_100_eeeeee_1x100.png) 50% top repeat-x;*/
     color: #333333;
     border-radius: 10px;
+}
+.relation-tree .wrapper{
+    min-height: 100px;
 }
 .relation-tree > div:hover{
     border: 3px solid rgba(191,186,7,1);
@@ -33,7 +36,7 @@
     font-size: 13px;
     border-radius: 5px;
     width: 90px;
-    height: 20px;
+    min-height: 20px;
     background-color: blue;
     color: white;
     text-align: center;
@@ -114,7 +117,7 @@
     left: 470px;    
 }
 .son .image{
-    background-image: url('/static/IMAGES/p.png');
+    background-image: url('/static/IMAGES/s.png');
 
 }
 .son-wrapper{
@@ -166,7 +169,7 @@
 }
 </style>
             <div class="relation-tree">
-                <div class="father-wrapper father"> 
+                <div class="father-wrapper father wrapper"> 
                     <div class="patient"> </div>
                     <div class="image"> </div> 
                      
@@ -177,12 +180,12 @@
                     <div id="line-to-father-hor" class="line-hor  mother"></div>
                     <div id="line-to-mother-ver"  class="line-ver mother"></div>
                      <div id="line-to-sibling-ver"  class="line-ver sibling"></div>
-                <div class="mother mother-wrapper"> 
+                <div class="mother mother-wrapper wrapper"> 
                     <div class="patient"> </div> 
                     <div class="image"> </div> 
                     
                 </div>
-                <div class="sibling sibling1"> 
+                <div class="sibling sibling1 wrapper"> 
                      <div class="patient"> </div>  
                      <div class="image"> </div> 
                 </div>
@@ -194,12 +197,12 @@
                     <div class="patient"> </div>  
                     <div class="image"> </div> 
                 </div>
-                <div class="proband">
+                <div class="proband wrapper">
                      <div class="patient"> </div>  
                      <div class="image"> </div>
                     
                 </div>
-                <div class="son-wrapper son"> 
+                <div class="son-wrapper son wrapper"> 
                     <div class="patient"> </div>
                     <div class="image"> </div> 
                 </div>
@@ -207,7 +210,7 @@
                     <div id="line-to-son-hor" class="line-hor son "></div>
                     <div id="line-to-son-ver" class="line-hor daughter"></div>
                     <div id="line-to-daughter-ver"  class="line-ver daughter"></div>
-                <div class="daughter daughter-wrapper"> 
+                <div class="daughter daughter-wrapper wrapper"> 
                     <div class="patient"> </div> 
                     <div class="image"> </div> 
                     

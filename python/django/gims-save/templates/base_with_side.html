@@ -16,6 +16,7 @@
     <script src="{% static 'JS/jquery-ui.min.js' %}" ></script>
     <script src="{% static 'JS/ui-grid.min.js' %}"></script>
     <script src="{% static 'JS/bootstrap.min.js' %}" ></script>
+    <script src="{% static 'JS/main.js' %}" ></script>
     <script type="text/javascript">
            var gimpdevApp = angular.module('myApp',  [])                           // for use of AngularJs with Django
                                    .config(function($interpolateProvider) {
@@ -73,11 +74,51 @@
         }]);
 
     })(angular);
+$(function () {
+    $('.message_note').on('click', function () {
+        var nid = this.id;
+      
+        $.ajax({
+            url:'/mybackend/get_note/'+nid,
+            type:'json',
+            method:'get',
+            error: function()
+            {
+                 console.log('error');
+            },
+            success: function(data)
+            {   
+                  console.log('data', data);
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> date </th><th> category </th><th> Note </th><th> From </th><th>  recipients </th></thead><tbody>';
+
+
+                var    urgent = (json_data.category.trim() == 'Urgent Matter')? 'danger' : '';
+                var    recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null )? '' : json_data[i].recipients;
+                var    writer = (typeof json_data.writer ==='undefined' || json_data.writer === null )? '' : json_data.writer;
+                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data.id+'"><td class="date">'+json_data.update_time+
+                    '</td><td>'+json_data.category+'</td><td>'+json_data.note+'</td><td>'+writer+'</td><td>'+recipients+'</td></tr>';
+
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+
+            }
+         });
+    });
+});
+
+
 
     </script>
 </head>
 <body >
     {% include "common_header.html" %}
+    <div class="popup note">
+        <button class="close" onclick="$('.popup').css('display', 'none');">X</button>
+        <div id="popup"> </div> 
+    </div>
     <div class="container" data-url="{{request.get_full_path}}">
         <div class="row">
             <!-- <div class="main-title"> G.I.M.S.</div> -->
@@ -87,14 +128,20 @@
                     <div class="title"> {{user}}</div>
 
                           <ul class="messages">
-                            <li> You have (1) new message </li>
-                              {% if messages %}
+
+                            {% for message in usermessages %}
+                                {% if message.type = 'NOTE' %}
+                                  <li class="message_note"  role="button" id="{{ message.related_note_id}}">{{ message.message }}</li>
+                                {% else %}
+                                 <li class="{{ message.type }}">{{ message.message }}</li>
+                                {% endif %}
+                            {% endfor %}
 
                             {% for message in messages %}
                             <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
 
                             {% endfor %}
-                              {% endif %}
+
                         </ul>
 
                 </div>

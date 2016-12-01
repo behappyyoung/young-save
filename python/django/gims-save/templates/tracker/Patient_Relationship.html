@@ -29,8 +29,12 @@
 </style>
 <script type="text/javascript">
 jQuery(document).ready(function() {
-	document.getElementById('id_relative').outerHTML = document.getElementById('id_relative').outerHTML.replace(/select/g, 'datalist');
+
+ {% if 'Add' in action %}
+ 	document.getElementById('id_relative').outerHTML = document.getElementById('id_relative').outerHTML.replace(/select/g, 'datalist');
 	$('input[name="relative"]').val($('#id_relative option[datalisted=datalisted]').val());
+
+{% endif %} 
 
 });
 function formSubmit(action){
@@ -38,7 +42,7 @@ function formSubmit(action){
 	if( action =='delete' && confirm('are you sure to delete?')){
 		$('#relForm').find("input[name=action]").val(action);	
 		$('#relForm').submit();
-	}else{
+	}else if( action =='edit' ){
 		$('#relForm').find("input[name=action]").val(action);
 		$('#relForm').submit();
 	}
@@ -63,7 +67,9 @@ Patient Relationship </div>
             <form action="/patient/{{ pid }}/relationship/" method="post" id="relForm">
                 {% csrf_token %}
                 {{ form }}
-                <input list="id_relative" name="relative">
+                 {% if 'Add' in action %}
+                	<input list="id_relative" name="relative">
+                 {% endif %} 
               <div class="actions">
 
               {% if 'Add' in action %}

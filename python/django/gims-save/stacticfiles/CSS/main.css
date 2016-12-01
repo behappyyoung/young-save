@@ -107,6 +107,34 @@ form select{
     text-transform: capitalize;
     font-weight:700;
  }
+ .popup{
+   position: fixed;
+    width: 95%;
+    left: 50px;
+    overflow: auto;
+    background-color: #ccc;
+    border-radius: 10px;
+    display: none;
+    z-index: 50;
+
+}
+.popup.note{
+    width: 800px;
+    left: 20%;
+}
+.popup table{
+    margin:30px auto;
+    background-color: rgba(181, 188, 214, 0.6);
+    
+    width: 95%;
+}
+#popup td{
+    padding:5px;
+}
+.popup table td.date{
+    width: 150px;
+}
+
  .sidemenu-block .panel{
     /*border-top: solid 5px blue;*/
  }

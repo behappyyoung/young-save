@@ -5,8 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from .models import Samples, Orders, OrderStatus, SampleOrderRel, Patients, Pedigree, PatientRelations, OrderPhenoTypes, \
     PatientOrderPhenoType, PatientOrderPhenoList, OrderGeneList, Notes, PeopleRelations, PatientRelations
-from .forms import OrderForm, OrderGeneListForm, NotesForm, NotesOrderForm, PatientRelationsForm
+from .forms import OrderForm, OrderGeneListForm, NotesPatientForm, NotesOrderForm, PatientRelationsForm, PatientRelationsEditForm
 from mybackend.models import CustomSQL, PhenoTypeLists, GeneLists
+from users.models import UserMessage
 from mybackend import functions, LoadOntology
 from logger.models import accessLog, loomLog, logging, orderlog, samplelog
 import json, requests, os
@@ -165,7 +166,8 @@ def order_edit(request, oid):
                 c_order.doctor_phone = request.POST['doctor_phone']
                 change += ' physician contact info / '
         if c_order.owner != request.POST['owner']:
-            change += ' ownership / From ' + functions.getUserInfo(c_order.owner, 'username') + ' To ' + functions.getUserInfo(request.POST['owner'], 'username')
+            prev = c_order.owner and functions.getUserInfo(c_order.owner, 'username')
+            change += ' ownership / From ' + str(prev) + ' To ' + functions.getUserInfo(request.POST['owner'], 'username')
             c_order.owner = request.POST['owner']
         if str(c_order.status_id) != str(request.POST['status']):
             change += ' Status / From ' + str(c_order.status) + ' To ' + getOrderStatus(request.POST['status'])
@@ -190,10 +192,18 @@ def order_notes(request, oid):
     if request.method == 'POST':
         form = NotesOrderForm(request.POST)
         if form.is_valid():
+            recipients = request.POST.getlist('recipients')
             obj = form.save(commit=False)
             obj.order_id = oid
+            obj.writer=request.user
+            obj.recipients = ','.join(recipients)
             obj.save()
-            orderlog(request, oid, getOrderInfo(oid, 'order_name'), 'new note added ')
+            order_name = getOrderInfo(oid, 'order_name')
+            orderlog(request, oid, order_name, 'new note added ')
+            for recipient in recipients:
+                message = UserMessage( user_id=recipient, related_order_id = oid,
+                                       related_note_id = obj.id, message = 'new note on ' + order_name , sender = request.user)
+                message.save()
         notes = Notes.objects.filter(order_id=oid).order_by('-update_time')
     else:
         try:
@@ -203,20 +213,28 @@ def order_notes(request, oid):
     if len(notes) == 0:
         notes = [{'id': ' --', 'update_time': ' -- ', 'category': ' -- ', 'note': 'no note'}]
     pid = getOrderInfo(oid, 'patient_id')
-    form = NotesOrderForm(initial={'order': oid, 'patient_id':pid, 'recipient':0})
+    form = NotesOrderForm(initial={'order': oid, 'patient_id':pid})
     logging(request, 'access')
     return render(request, 'tracker/Order_Notes.html', {'form' : form, 'oid': oid, 'notes':notes})
 
 
 @login_required(login_url='/saml/')
 def patient_notes(request, pid):
+    p_info = functions.getPatientInfo(pid, ['first_name', 'last_name', 'mrn'])
+    p_name = p_info['first_name']+' '+p_info['last_name']+'('+ p_info['mrn']+')'
     if request.method == 'POST':
-        form = NotesForm(request.POST)
+        form = NotesPatientForm(request.POST)
         if form.is_valid():
             obj = form.save(commit=False)
+            recipients = request.POST.getlist('recipients')
             obj.patient_id = pid
+            obj.writer = request.user
+            obj.recipients = ','.join(recipients)
             obj.save()
-            # orderlog(request, oid, getOrderInfo(oid, 'order_name'), 'new note added ')
+            for recipient in recipients:
+                message = UserMessage( user_id=recipient, related_note_id = obj.id,
+                                       message = 'new note on ' + p_name , sender = request.user)
+                message.save()
         notes = Notes.objects.filter(patient_id=pid).order_by('-update_time', 'order_id')
     else:
         try:
@@ -225,9 +243,9 @@ def patient_notes(request, pid):
             notes=[]
     if len(notes) == 0:
         notes = [{'id': ' --', 'update_time': ' -- ', 'category': ' -- ', 'note': 'no note'}]
-    form = NotesForm(initial={'patient_id':pid, 'recipient':0})
+    form = NotesPatientForm(initial={'patient_id':pid})
     logging(request, 'access')
-    return render(request, 'tracker/Patient_Notes.html', {'form' : form, 'pid': pid, 'notes':notes})
+    return render(request, 'tracker/Patient_Notes.html', {'form' : form, 'pid': pid, 'notes':notes, 'p_name': p_name})
 
 
 @login_required(login_url='/saml/')
@@ -295,32 +313,42 @@ def patient_relationship(request, pid):
             main = request.POST['main']
             relative = request.POST['relative']
             relationship = request.POST['relationship']
-            relative_sex = getPatientInfo(relative, 'sex')
 
-            if relative_sex == 'male':
-                what = 'back_relation_male'
-            else:
-                what = 'back_relation_female'
-            relative_relationship = getPatientRelations(relationship, what)
-            if action == 'Add':
-                if PatientRelations.objects.filter(main=relative, relative=main).count() ==0:
-                    form.save()
-                    rel = PatientRelations(main=relative, relative=main, relationship=relative_relationship)
-                    rel.save()
-                    return HttpResponseRedirect('/patient/' + pid + '/')
-                else:
-                    messages.error(request, 'Relationship Exists')
-                    action = 'Edit'
-                    form = PatientRelationsForm(
-                        initial={'main': main, 'relative': relative, 'relationship': relationship})
-            else:
+            if action == 'delete':
                 rel1 = PatientRelations.objects.get(main=relative, relative=main)
-                rel1.relationship = request.POST['relationship']
-                rel1.save()
-                rel2 = PatientRelations(main=relative, relative=main)
-                rel2.relationship = relative_relationship
-                rel2.save()
+                rel1.delete()
+                rel2 = PatientRelations.objects.get(main=main, relative=relative)
+                rel2.delete()
                 return HttpResponseRedirect('/patient/' + pid + '/')
+            else:
+
+                # relative_sex = getPatientInfo(relative, 'sex')
+                main_sex = getPatientInfo(main, 'sex')
+                if main_sex == 'Male':
+                    what = 'back_relation_male'
+                else:
+                    what = 'back_relation_female'
+
+                relative_relationship = getPatientRelations(relationship, what)
+                if action == 'Add':
+                    if PatientRelations.objects.filter(main=relative, relative=main).count() ==0:
+                        form.save()
+                        rel = PatientRelations(main=relative, relative=main, relationship=relative_relationship)
+                        rel.save()
+                        return HttpResponseRedirect('/patient/' + pid + '/')
+                    else:
+                        messages.error(request, 'Relationship Exists')
+                        action = 'Edit'
+                        form = PatientRelationsForm(
+                            initial={'main': main, 'relative': relative, 'relationship': relationship})
+                else:
+                    rel1 = PatientRelations.objects.get(main=main, relative=relative)
+                    rel1.relationship_id = relationship
+                    rel1.save()
+                    rel2 = PatientRelations.objects.get(main=relative, relative=main)
+                    rel2.relationship_id = relative_relationship
+                    rel2.save()
+                    return HttpResponseRedirect('/patient/' + pid + '/')
         else:
             action=request.POST['action']
             # form = form
@@ -329,11 +357,11 @@ def patient_relationship(request, pid):
             form = PatientRelationsForm(initial={'main': pid})
             action = 'Add'
         else:
-            main = request.POST.get('main')
-            relative = request.POSE.get('relative')
-            relationship = request.POSE.get('relationship')
+            main = request.GET.get('main')
+            relative = request.GET.get('relative')
+            relationship = request.GET.get('relationship')
             if PatientRelations.objects.filter(main=relative, relative=main).count() != 0:
-                form = PatientRelationsForm(initial={'main': main, 'relative': relative, 'relationship': relationship})
+                form = PatientRelationsEditForm(initial={'main': main, 'relative': relative, 'relationship': relationship})
                 action = 'Edit'
             else:
                 form = PatientRelationsForm(initial={'main': pid, 'relative': relative})
@@ -356,7 +384,8 @@ def patient_pedigree(request, pid):
         return HttpResponseRedirect('/saml/?slo')
     patient = Patients.objects.get(pid=pid)
     try:
-        pedigree = Pedigree.objects.get(patient_id=pid)
+        # pedigree = Pedigree.objects.get(patient_id=pid)
+        pedigree = functions.getFamily(pid, True)
     except:
         pedigree =[{'id':patient.pid, 'name':patient.first_name+' '+patient.last_name, 'sex':patient.sex, 'carrierStatus':'unknown' }]
     logging(request, 'access')

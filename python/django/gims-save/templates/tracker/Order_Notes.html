@@ -16,16 +16,20 @@
 		text-align: center;
 		margin: 20px auto;
 	}
+	form select#id_recipients{
+		height: 100px;
+	}
 	form textarea{
-		width: 800px;
+		margin-top: 20px;
+		width: 80%;
 		height: 100px;
 	}
 	.sub-title select{
 		-webkit-appearance: none;
-    -moz-appearance: none;
-    text-align: center;
-    background-color: transparent;
-    border: none;
+	    -moz-appearance: none;
+	    text-align: center;
+	    background-color: transparent;
+	    border: none;
 	}
 	.notes table{
 		background-color: rgba(181, 188, 214, 0.6);
@@ -34,7 +38,6 @@
 		width: 150px;
 	}
 
-	/*form textarea:after { content: '\00000A';white-space: pre; }*/
 </style>
 
  <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" />  Add Note for Order : {{form.order}} </div>
@@ -57,17 +60,18 @@
 		<thead>
 			<th> date </th>
 			<th> category</th>
-			<th> recipient</th>
+			<th> By </th>
+			<th> recipients</th>
 			<th> Note </th>
 		</thead>
 		<tbody>
 			{% for note in notes %}
+
 			<tr>
 				<td class="date"> {{note.update_time}}</td>
-
 				<td> {{note.category.category_name}}</td>
-
-				<td> {{note.recipient|cut:"0"}}</td>
+				<td> {{note.writer|cut:"None"}}</td>
+				<td> {{note.recipients|cut:"None"}}</td>
 				<td> {{note.note}}</td>
 			</tr>
 			{% endfor %}

@@ -7,7 +7,7 @@
 				var siblings=[];
 				var son =[];
                 var daughter=[];
-
+                var tempHtml ='';
 				for(var i=0; i< family.length;i++){
 					if(family[i].relationship == 'Father'){
 						father.push(family[i]);
@@ -28,20 +28,40 @@
                         son.push(family[i]);
                         son[0].relationship = '/sample/'+son[0].id+'/';  
                         son[0].label = "Son";
-                        $('.son').css('display', 'block');
-                        $('.son .patient').html(son[0].mrn);
+                       
+                       
                     }else if(family[i].relationship == 'Daughter'){
                         daughter.push(family[i]);
                         daughter[0].relationship = '/sample/'+daughter[0].id+'/';  
                         daughter[0].label = "Daughter";
-                        $('.daughter').css('display', 'block');
-                        $('.daughter .patient').html(daughter[0].mrn);
+                    
+                    }else if(family[i].relationship == 'Patient'||family[i].relationship == 'Self'){
+                        proband={'mrn': family[i].mrn};
+                        
                     }
 				}
 
+                $('.proband .patient').html(proband.mrn);
 
+                if(daughter.length >0 ){
+                        $('.daughter').css('display', 'block');
+                        tempHtml ='';
+                        for(var i=0; i<daughter.length;i++){
+                            tempHtml += daughter[i].mrn + '<br />';
+                        }   
+                        $('.daughter .patient').html(tempHtml);
+                }
 
-                if(sibling  <=0){
+                if(son.length >0 ){
+                        $('.son').css('display', 'block');
+                        tempHtml ='';
+                        for(var i=0; i<son.length;i++){
+                            tempHtml += son[i].mrn + '<br />';
+                        }   
+                        $('.son .patient').html(tempHtml);
+                }
+
+                if(sibling.length  <=0){
                     $('.sibling').css('display', 'none');
                 }else{
                     $('.sibling1 .patient').html(sibling[0].mrn);
@@ -59,12 +79,8 @@
                 }
 
 
-                if(proband  <=0){
-                    $('.proband').css('display', 'none');
-                }else{
-                    proband.url = '/sample/'+proband.id+'/';
-                    $('.proband .patient').html(proband.mrn); 
-                }
+
+
   			
 if(window.location.hostname =='gims-dev.shc.org'){
                 console.log('family', family,  father, 'm', mother,'proband', proband, 'sibling', sibling);
