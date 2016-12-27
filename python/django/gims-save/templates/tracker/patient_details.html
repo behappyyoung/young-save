@@ -2,22 +2,27 @@
 {% block content %}
 {% load staticfiles %}
  <link rel="stylesheet" href="{% static 'CSS/lightbox.min.css' %}">
- <script src="{% static 'JS/jQuery.fileupload.js' %}"></script>
+ <script src="{% static 'JS/jquery.fileupload.js' %}"></script>
   <script src="{% static 'JS/lightbox.min.js' %}"></script>
 <style type="text/css">
 .gridStyle {
     height: 600px;
 }
-
+.relation-tree{
+    display: none;
+}
 .flex {
     display: flex;
 }
-#pedigree_image {
+#pedigree_image_dialog {
     margin: 10px auto;
     width: 200px;
     height: 200px;
     background-image: url('/static/IMAGES/no-entry');
     background-size: cover;
+}
+#pedigree_image embed{
+    height: 250px;
 }
 .fileupload{
     margin: 30px auto;
@@ -59,6 +64,9 @@
 .popup table td.order_name{
     font-weight: bolder;
 }
+.familylist.new{
+        border-top: solid 2px #909090;
+}
 </style>
 <script type="text/javascript">
 
@@ -83,10 +91,11 @@
             $('#fileupload').fileupload({
                 url: uploadUrl,
                 dataType: 'json',
-                formData: {pid: '{{patient.pid}}'},
+                formData: {pid: '{{patient.pid}}', id:'{{patient.id}}'},
                 done: function (e, data) {
 
-                     $('#pedigree_image').html('<a class="pimage" href="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'"  width=100 height=100/> </a>');
+                     // $('#pedigree_image').html('<a class="pimage" href="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'"  width=200 height=200/> </a>');
+                     location.reload();
                 },
                 progressall: function (e, data) {
                     var progress = parseInt(data.loaded / data.total * 100, 10);
@@ -99,23 +108,23 @@
                 .parent().addClass($.support.fileInput ? undefined : 'disabled');
 
 
-            $.ajax({
-            url:'{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png',
-            type:'HEAD',
-            error: function()
-            {
-                //file not exists
-                 console.log('file not exists');
-            },
-            success: function()
-            {
-                //file exists
-                console.log('file exists');
+            // $.ajax({
+            // url:'{% static 'IMAGES/Pedigree/' %}{{ files.file_name }}',
+            // type:'HEAD',
+            // error: function()
+            // {
+            //     //file not exists
+            //      console.log('file not exists');
+            // },
+            // success: function()
+            // {
+            //     //file exists
+            //     console.log('file exists');
 
-                $('#pedigree_image').html('<a class="pimage" href="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'"  width=200 height=200/> </a>');
-                $('#label-fileupload').html('Update Pedigree Image');
-            }
-            });
+            //     $('#pedigree_image').html('<a class="pimage" href="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{% static 'IMAGES/Pedigree/' %}{{ patient.pid }}.png?'+ new Date().getTime()+'"  width=200 height=200/> </a>');
+            //     $('#label-fileupload').html('Update Pedigree Image');
+            // }
+            // });
 
     // $('#pedigree_image').on('click', function (){
     //     var src = $('#pedigree_image img')[0].src;
@@ -129,7 +138,6 @@
     // });
 
     $('#btn-notes').on('click', function () {
-        // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
         $.ajax({
             url:'/mybackend/get_notes/',
             type:'json',
@@ -170,7 +178,6 @@
          });
     });
     $('.btn-order-note').on('click', function () {
-        // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
         var oid = this.id;
         console.log(oid);
         $.ajax({
@@ -210,14 +217,56 @@
             }
          });
     });
+
+    $('#btn-history').on('click', function () {
+        // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
+        $.ajax({
+            url:'/mybackend/get_log/patient/',
+            type:'json',
+            method:'POST',
+            data:{'oid': '{{ patient.pid }}'},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> update  </th><th> action</th><th> By </th></thead><tbody>';
+                for(var i=0; i<json_data.length; i++){
+                    hHtml += '<tr><td class="date">'+json_data[i].fields.update_time+
+                    '</td><td>'+json_data[i].fields.action+'</td><td>'+json_data[i].fields.user_id+'</td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+
+            }
+         });
+    });
+
    $(".popup").draggable();
+
 });
 
-// var family = JSON.parse('{{family}}'.replace(/&#39;/g, '"').replace(/u"/g, '"').replace(/&lt;/g, '{').replace(/&gt;/g, '}'));
+   function show_tree(){
+        if($('#show_relation_tree').html().trim() == 'Show Tree'){
+            $('.relation-tree').css('display', 'block');
+            $('#show_relation_tree').html('Hide Tree');    
+        }else{
+            $('.relation-tree').css('display', 'none');
+            $('#show_relation_tree').html('Show Tree');
+        }
+        
+   }
 var family=[];
 var proband={'mrn': '{{patient.pid}}'};
 
- {% for f in family %}
+ {% for f in relative %}
         family.push({relative:'{{ f.relative }}', relationship: '{{ f.relationship }}', ethnicity: '{{ f.ethnicity }}', mrn: '{{ f.mrn }}'});
  {% endfor %}
 {% include "com/js_relation_tree.js" %}
@@ -228,11 +277,14 @@ var proband={'mrn': '{{patient.pid}}'};
 
 <div ng-controller="trackerController" class="tracker patients details">
 
-    <div class="sub-title"> Patient: {{ patient.first_name }} {{ patient.middle_name|default_if_none:' ' }} {{ patient.last_name }} 
+    <div class="sub-title"> Patient: {{ patient.first_name }} {{ patient.middle_name|default_if_none:' ' }} {{ patient.last_name }} [ {{ patient.pid }} ]
         
              <a href="/patient/{{patient.pid}}/Notes/" target="_new"  ><button class="btn btn-primary btn-sm right-button "> Add Notes </button> </a>
                  <button class="btn btn-primary btn-sm right-button "  id="btn-notes">Notes </button> 
+                  <button class="btn btn-primary btn-sm  right-button" id="btn-history"> Update History </button> 
         
+      <a href="/patient/{{patient.pid}}/Edit/"><button class="btn btn-primary btn-sm  right-button"> Update Patient Info </button> </a> 
+
      </div>
 
     <div class="popup">
@@ -260,11 +312,18 @@ var proband={'mrn': '{{patient.pid}}'};
            
         </div>
     </div>
+     <div class=" details-bottom">
+ 
+                         <div>
+                         <div class="label"> Memo </div>
+                        <div class="value"> {{patient.memo|default_if_none:' - ' }} </div>
+                        </div>
+  </div>
         <div class="main">
         <div class="flex">
             
             <div class="main-left">
-                <div  class="sub-sub-title"> Family  
+                            <div  class="sub-sub-title"> Patient Relationships  
                     <a href="/patient/{{patient.pid}}/relationship/"><button class="btn btn-primary btn-sm  right-button"> Add Relative </button> </a> 
                  </div>
                  <table class="table table-bordered table-striped table-hover">
@@ -272,47 +331,127 @@ var proband={'mrn': '{{patient.pid}}'};
 
                             <th> Patient ID </th>
                             <th>  Relationship </th>
-                            <th> Ethnicity </th>
+
                             <th> MRN </th>
 
 
 
                         </tr>
 
-                        {% for f in family %}
+                        {% for r in relative %}
 
                         <tr class="samplelist">
 
 
-                             <td><a href="/patient/{{ f.relative }}/"> {{ f.relative }} </a></td>
+                             <td><a href="/patient/{{ r.relative }}/"> {{ r.relative }} </a></td>
                              <td>
-                                <a href="/patient/{{patient.pid}}/relationship/?main={{patient.pid}}&relative={{ f.relative }}&relationship={{ f.relationship.id }}"> {{ f.relationship }} </a> 
+                                <a href="/patient/{{patient.pid}}/relationship/?main={{patient.pid}}&relative={{ r.relative }}&relationship={{ r.relationship.id }}"> {{ r.relationship }} </a> 
                             </td>
-                             <td>{{ f.ethnicity }}</td>
-                            <td>{{ f.mrn }}</td>
+
+                            <td>{{ r.mrn }}</td>
 
                         </tr>
                         {% endfor %}
 
                     </table>
-
+                    <div> <button class="button btn-sm btn-default" onclick="show_tree();" id="show_relation_tree"> Show Tree </button>
+                    </div>
                        {% include "com/html_relation_tree.html" %}
+
+            
             </div>
             <div class="main-right">
-                <div  class="sub-sub-title"> Pedigree </div>
+                <div  class="sub-sub-title"> Family Groups
+                    <a href="/families/New/" target="_new"><button class="btn btn-primary btn-sm  right-button"> New Family Group </button> </a> 
+                 </div>
+                 <table class="table table-bordered table-striped table-hover">
+                        <tr>
+
+                            <th>  Family ID </th>
+                            <th> Patient ID </th>
+                            <th> Gender </th>
+                            <th> Name </th>
+                        </tr>
+
+                        {% for f in family %}
+                                
+                               
+                        <tr class="familylist {% ifchanged f.family_id %} new {% endifchanged %}">
+                        <td>{% ifchanged f.family_id %}
+                            <a href="/families/?fid={{ f.family_id }}"> {{ f.family_id }} </a> 
+                             <a href="/families/Add/?fid={{ f.family_id }}"><button class="btn btn-primary btn-sm right-button "> Edit Family  </button> </a> 
+                             {% endifchanged %}</td>
+                             <td> <a href="/patient/{{ f.pid }}/">{{ f.pid }} </a> </td>
+                            <td>{{ f.sex }}</td>
+                            <td>{{ f.first_name }} {{ f.last_name }} </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </table>
+            </div>
+         </div>
+         </div>
+          <div class="main">
+        <div class="col-md-12">
+            
+            <div class="col-md-3 col-sm-4"> 
+            <div  class="sub-sub-title"> Pedigree </div>
                 <div> <a href="/patient/{{ patient.pid }}/pedigree/"> Show Pedigree Chart </a></div>
-                <br />
+                <br />  
+            </div>
+            <div class="col-md-5 col-sm-8">
+                <div id="pedigree_image" class="text-center">   
+                {% if files  %}  
+                    {% if 'pdf' in files.0.file_name %}
+                      <embed src="{% static 'IMAGES/Pedigree/' %}{{ files.0.file_name }}" type="application/pdf"> </embed> 
+                      <a class="ppdf" href="{% static 'IMAGES/Pedigree/' %}{{ files.0.file_name }}"  target="_new" > Open </a>
+                    {% else %}
+                         <a class="pimage" href="{% static 'IMAGES/Pedigree/' %}{{ files.0.file_name }}" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{% static 'IMAGES/Pedigree/' %}{{ files.0.file_name }}"  width=200 height=200/> </a>
+                    {% endif %}
+                 </div> 
 
-                <div id="pedigree_image">   </div> 
-                <!-- <div id="pedigree_image_dialog"> <img class="pimage" src="" />  </div>  -->
                 <div class="fileupload">
-
+                      <label for="fileupload" class="btn btn-success fileinput-button" id="label-fileupload"> Update Pedigree Image</label>
+                {% else %}
+                </div> 
+                <div class="fileupload">
                       <label for="fileupload" class="btn btn-success fileinput-button" id="label-fileupload"> Add Pedigree Image</label>
-                      <input class="btn btn-success fileinput-button" id="fileupload" type="file" style="visibility: hidden;" name="files" / >
+                {% endif %}
+   
 
-                </div>
+                
+                 <input class="btn btn-success fileinput-button" id="fileupload" type="file" style="visibility: hidden;" name="files" / >
+                 </div>
+            </div>
+            <div class="col-md-4 col-sm-12"> 
+            <div  class="sub-sub-title"> Related Files </div>
+             <table class="table table-bordered table-striped table-hover">
+                        <tr>
+                                <th> File Title </th>
+                            <th> File Name </th>
+                            <th> type</th>
+                            <th> </th>
+
+                        </tr>
+
+                        {% for f in p_files %}
+
+                        <tr class="samplelist">
+                                <td>{{ f.file_title }} </td>
+                             <td>{{ f.file_name }} </td>
+                             <td> {{ f.type }} </td>
+                             <td>{% if f.url %} <a href="{{ f.url }}"> {{ f.file_title }} </a>
+                                {% endif %} </td>
 
 
+                        </tr>
+                        {% endfor %}
+
+                </table>
+
+                <div> <a href="/patient/{{ patient.pid }}/Files/"> Files Details </a></div>
+                <br />  
             </div>
         </div>
         <div class="sample">
@@ -327,6 +466,7 @@ var proband={'mrn': '{{patient.pid}}'};
                             <th> Source </th>
 
                             <th> Type </th>
+                             <th> Patient ID</th>
 
                         </tr>
 
@@ -339,7 +479,7 @@ var proband={'mrn': '{{patient.pid}}'};
                             <td>{{ s.source }}</td>
              
                             <td>{{ s.type }}</td>
-
+                            <td>{{s.patient_id}}</td>
                         </tr>
                         {% endfor %}
 
@@ -356,6 +496,7 @@ var proband={'mrn': '{{patient.pid}}'};
                         <th> Order Type </th>
                         <th> Status </th>
                         <th> Phenotypes </th>
+                        <th> Patient ID</th>
 
                     </tr>
                     {% for o in orders %}
@@ -384,6 +525,7 @@ var proband={'mrn': '{{patient.pid}}'};
                                 </table>
 
                         </td>
+                        <td>{{o.patient_id}}</td>
                     </tr>
                     {% endfor %}
 

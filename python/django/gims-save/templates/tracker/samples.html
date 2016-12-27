@@ -52,7 +52,7 @@
 			<th> Patient ID </th>
             <th> Order </th>
             <th> Order Type </th>
-            <th> relation </th>
+
 
 		</tr>
 		<tr ng-repeat="s in samples | filter:searchs | orderBy:sortType:sortReverse"  id='{$ s.id $}'  ng-click="onSampleClick(s.id);">
@@ -71,7 +71,7 @@
            
             <td>{$ s.order_name $}</td>
             <td>{$ s.order_type $}</td>
-            <td>{$ s.relation $}</td>
+
 
 		</tr>
 	</table>

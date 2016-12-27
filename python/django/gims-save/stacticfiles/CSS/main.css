@@ -4,8 +4,11 @@ body{
 }
 a:hover {
     text-decoration: none;
+    
 }
-
+.pointer{
+    cursor: pointer;
+}
 .container, .container-fluid{               /* main block containers  for top menu */
     margin-top:100px;
     margin-bottom: 30px; 
@@ -15,6 +18,13 @@ a:hover {
     width: 50px;
     padding-right: 10px;
 }
+.blink {
+    animation: blinker 1s linear infinite;
+}
+@keyframes blinker {  
+  50% { opacity: 0; }
+}
+
 form select{
     -webkit-appearance: menulist-button;
 }
@@ -116,7 +126,7 @@ form select{
     border-radius: 10px;
     display: none;
     z-index: 50;
-
+    max-height: 800px;
 }
 .popup.note{
     width: 800px;
@@ -300,19 +310,20 @@ div.menu a{
     margin:0 auto;
 }
 
-.details-top {
-    margin: 10px auto 40px;
+.details-top,.details-bottom  {
+    margin: 30px auto 10px;
     padding-left: 10px;
 }
 .details-top .main-left, .details-top .main-right {
          background-color: white;
-              border-radius: 10px;
+          border-radius: 10px;
                   border: dotted 1px;
 }
-.details-top .label, .details-top .value{
+
+.details-top .label, .details-top .value,.details-bottom .label, .details-bottom .value{
     font-weight: bold;
     font-size: 12px;
-    width: 200px;
+   
     text-transform: uppercase;
     color: black;
     text-align: left;
@@ -323,12 +334,17 @@ div.menu a{
      line-height: initial;
 
 }
-.details-top .value{
-
+.details-top .label{
+     width: 200px;
+}
+.details-top .value,.details-bottom .label{
+    width: 300px;
     text-transform: capitalize;
 
 }
-
+.details .main {
+    margin: 30px auto 10px;
+}
 .orders.details .main {
     display: flex;
 }

@@ -14,13 +14,13 @@
                         father[0].relationship = '/sample/'+father[0].id+'/';  
                         father[0].label = "Father";
                         $('.father').css('display', 'block');
-                        $('.father .patient').html(father[0].mrn);
+                        $('.father .patient').html(father[0].relative);
 					}
 					else if(family[i].relationship == 'Mother'){
 						mother.push(family[i]);
                         $('.mother').css('display', 'block');
                         mother[0].url = '/sample/'+mother[0].id+'/';  
-                        $('.mother .patient').html(mother[0].mrn);  
+                        $('.mother .patient').html(mother[0].relative);  
 
                     }else if(family[i].relationship == 'Sibling'){
                         sibling.push(family[i]);
@@ -47,7 +47,7 @@
                         $('.daughter').css('display', 'block');
                         tempHtml ='';
                         for(var i=0; i<daughter.length;i++){
-                            tempHtml += daughter[i].mrn + '<br />';
+                            tempHtml += daughter[i].relative + '<br />';
                         }   
                         $('.daughter .patient').html(tempHtml);
                 }
@@ -64,16 +64,16 @@
                 if(sibling.length  <=0){
                     $('.sibling').css('display', 'none');
                 }else{
-                    $('.sibling1 .patient').html(sibling[0].mrn);
+                    $('.sibling1 .patient').html(sibling[0].relative);
                     if(typeof sibling[1] == 'undefined'  ){
                          $('.sibling2').css('display', 'none');
                     }else{
-                        $('.sibling2 .patient').html(sibling[1].mrn);
+                        $('.sibling2 .patient').html(sibling[1].relative);
                     }
                     if(typeof sibling[2] == 'undefined'  ){
                          $('.sibling3').css('display', 'none');
                     }else{
-                        $('.sibling3 .patient').html(sibling[2].mrn);
+                        $('.sibling3 .patient').html(sibling[2].relative);
                         $('.relation-tree').css('margin-left', '0');
                     }
                 }

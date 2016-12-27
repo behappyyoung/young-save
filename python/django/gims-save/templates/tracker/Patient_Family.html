@@ -1,0 +1,145 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+<style type="text/css">
+	.form-wrapper{
+		width: 800px;
+		margin: 50px auto;
+	}
+	.form {
+		width: 700px;
+		margin: 50px auto;
+	}
+	form label, form input, form select, form datalist{
+		width: 300px;
+		margin: 20px auto;
+	}
+	form .actions input{
+		width: 200px;
+	}
+	.alert{
+		width: 600px;
+	}
+
+	.errorlist{
+		position: absolute;
+		color: red;
+		    margin-top: -10px;
+    		margin-left: 300px;
+	}
+</style>
+<script type="text/javascript">
+jQuery(document).ready(function() {
+
+ {% if 'Add' in action or 'New' in action %}
+ 	document.getElementById('id_patient').outerHTML = document.getElementById('id_patient').outerHTML.replace(/select/g, 'datalist');
+	$('input[name="patient"]').val($('#id_patient option[datalisted=datalisted]').val());
+{% else %}
+	$('#id_patient option[selected!="selected"]').hide();
+{% endif %} 
+
+
+});
+
+function goback() {
+	{% if pid %}
+		var gobackUrl = "/patient/{{ pid }}/";
+	{% else %}
+		var gobackUrl = "/families/";
+	{% endif %}
+	window.location.href = gobackUrl;
+}
+function formSubmit(action){
+
+	if( action =='delete' && confirm('are you sure to delete?')){
+		$('#relForm').find("input[name=action]").val(action);	
+		$('#relForm').submit();
+	}else if( action =='edit' ){
+		$('#relForm').find("input[name=action]").val(action);
+		$('#relForm').submit();
+	}
+
+}
+
+
+function delete_member(fid, pid) {
+        $.ajax({
+            url:'/mybackend/magic_function/delete_member/',
+            type:'json',
+            method:'POST',
+            data:{fid: fid, pid: pid},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+            	console.log(data);
+            	if(data=='Done'){
+            		location.reload();
+            	}
+            }
+            });
+ };
+</script>
+<div class="tracker">
+	<div class="sub-title"> 
+		{% if 'New' in action %}
+	    	New Family Group 
+	    {% elif 'Add' in action %}
+	    	Add Patient Family Member
+	    {% else %}
+	    	 Edit Family Group 
+	    {% endif %} 
+	 </div>
+
+	<div class="form-wrapper">
+	            <form action="/families/{{action}}/" method="post" id="relForm">
+	                {% csrf_token %}
+	                {{ form }}
+	                 {% if 'Add' in action or 'New' in action %}
+	                	<input list="id_patient" name="patient">
+	                 {% endif %} 
+	              <div class="actions">
+
+	              {% if 'Add' in action or 'New' in action %}
+	                <input type="submit"  name="action"  value='Add' class="btn btn-primary btn-sm"  />   
+	                 <input type="button" class="btn btn-sm" value='Cancel' onclick="goback();" />   
+	                {% else %}
+
+	                 <input type="text"  name="action"  value='Save' onclick="formSubmit('edit');" class="btn btn-primary btn-sm"  />   
+	 				<input type="button" class="btn btn-sm" value='Cancel' onclick="goback();" />   
+	                 <input type="text" value="Delete" onclick="formSubmit('delete');" class="btn btn-primary btn-sm"  />   
+	               {% endif %}
+	               
+	            </div>  				
+	               
+	            </form>
+
+	           
+	</div>            
+	<div>
+		<div class="sub-sub-title"> Family Members </div>
+		       <table class="table table-bordered table-striped table-hover">
+                        <tr>
+
+                            <th>  Family ID </th>
+                            <th> Patient ID </th>
+                            <th> MRN </th>
+                            <th></th>
+                        </tr>
+
+                        {% for f in family %}
+
+                        <tr class="familylist">
+                        <td><a href="/families/?fid={{ f.family_id }}"> {{ f.family_id }} </a> </td>
+                             <td><a href="/patient/{{ f.patient.pid }}/"> {{ f.patient }} </a> </td>
+                            <td>{{ f.patient.mrn }}</td>
+                            <td> <button id="delete_member" class="button btn-sm btn-default" onclick="delete_member('{{ f.family_id }}', '{{ f.patient.id }}')"> Delete </button> </td>
+                        </tr>
+                        {% endfor %}
+
+                </table>
+	</div>
+</div>
+{% endblock content %}

@@ -1,0 +1,147 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+{% load staticfiles %}
+ <script src="{% static 'JS/jquery.fileupload.js' %}"></script>
+<style type="text/css">
+    .form-wrapper{
+        width: 800px;
+        margin: 50px auto;
+    }
+    .form {
+        width: 700px;
+        margin: 50px auto;
+    }
+    form label, form input, form select, form datalist{
+        width: 300px;
+        margin: 20px auto;
+    }
+    form .actions input{
+        width: 200px;
+    }
+
+    .alert{
+        width: 600px;
+    }
+
+    .errorlist{
+
+        color: red;
+
+    }
+</style>
+<script type="text/javascript">
+jQuery(document).ready(function() {
+
+
+
+});
+
+
+function formSubmit(action){
+
+    if( action =='delete' && confirm('are you sure to delete?')){
+        $('#filesForm').find("input[name=action]").val(action);   
+        $('#filesForm').submit();
+    }else if( action =='edit' ){
+        $('#filesForm').find("input[name=action]").val(action);
+        $('#filesForm').submit();
+    }
+
+}
+
+
+function delete_file(fid) {
+    if(confirm('are you sure to delete?')){
+        $.ajax({
+            url:'/mybackend/magic_function/delete_patient_file/',
+            type:'json',
+            method:'POST',
+            data:{fid: fid},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                if(data=='Done'){
+                    location.reload();
+                }
+            }
+            });
+    }
+ };
+</script>
+<div class="tracker">
+    <div class="sub-title">  
+        {% if 'Add' in action %}
+            Add New Files to Patient 
+        {% else %}
+             Edit Patient Files 
+        {% endif %} 
+        {{pid}}
+     </div>
+
+    <div class="form-wrapper">
+            {% if 'Add' in action %}
+                <form action="/patient/{{pid}}/Files/Add/" method="post" id="filesForm" enctype="multipart/form-data">
+            {% else %}
+                 <form class="form" action="/patient/{{pid}}/Files/Edit/?fid={{fid}}" method="post" id="filesForm" enctype="multipart/form-data">
+            {% endif %} 
+
+                    {% csrf_token %}
+                    {{ form }}
+
+
+                  <div class="actions">
+
+                  {% if 'Add' in action  %}
+                    <input type="submit"  name="action"  value='Add' class="btn btn-primary btn-sm"  />   
+                      
+                    {% else %}
+
+                     <input type="text"  name="action"  value='Save' onclick="formSubmit('edit');" class="btn btn-primary btn-sm"  />   
+
+
+                   {% endif %}
+                   <a href="/patient/{{pid}}/Files/" > <input type="button" class="btn btn-sm" value='Cancel'  />   </a>
+                </div>                  
+                   
+                </form>
+
+               
+    </div> 
+<div>
+ <div class="sub-title">  
+       current files
+     </div>
+                   <table class="table table-bordered table-striped table-hover">
+                        <tr>
+                                <th> File Title </th>
+                            <th> File Name </th>
+                            <th> type</th>
+                            <th> location </th>
+                            <th> Desc </th>
+                            <th> </th>
+                            <th> Actions </th>
+                        </tr>
+
+                        {% for f in p_files %}
+
+                        <tr class="samplelist">
+                                <td>{{ f.file_title }} </td>
+                             <td>{{ f.file_name }} </td>
+                             <td> {{ f.type }} </td>
+                            <td>{{ f.location }}</td>
+                             <td>{{ f.desc }}</td>
+                             <td>{% if f.url %} <a href="{{ f.url }}"> {{ f.file_title }} </a>
+                                {% endif %} </td>
+                            <td> <a id="go-edit-patientfile" href="/patient/{{pid}}/Files/Edit/?fid={{f.id}}"> <button id="edit-file" class="button btn-sm btn-default" > Edit </button> </a> <button id="delete-file" class="button btn-sm btn-default" onclick="delete_file('{{ f.id }}')"> Delete </button> </td>
+
+                        </tr>
+                        {% endfor %}
+
+                </table>
+</div>
+</div>          
+{% endblock content %}

@@ -1,0 +1,79 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+
+<script type="text/javascript">
+jQuery(document).ready(function() {
+
+
+
+});
+function delete_file(fid) {
+    if(confirm('are you sure to delete?')){
+        $.ajax({
+            url:'/mybackend/magic_function/delete_patient_file/',
+            type:'json',
+            method:'POST',
+            data:{fid: fid},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                if(data=='Done'){
+                    location.reload();
+                }
+            }
+            });
+    }
+ };
+</script>
+<style type="text/css">
+    .main {
+        margin-top: 20px;
+    }
+</style>
+<div class="tracker"  class="tracker patients files">
+	<div class="sub-title"> 
+
+	Patient Files 
+
+	  <span class="sub-sub-title">	for Patient :  <a href="/patient/{{ patient.pid }}/" >  {{ patient }} </a> </span>
+      <a href="/patient/{{ patient.pid }}/Files/Add/" ><button class="button btn btn-primary right-button"> Add New File </button> </a>
+	</div>
+
+
+	       
+	<div class="main">
+
+                   <table class="table table-bordered table-striped table-hover">
+                        <tr>
+                                <th> File Title </th>
+                            <th> File Name </th>
+                            <th> type</th>
+                            <th> location </th>
+                            <th> Desc </th>
+                            <th> </th>
+                            <th> Actions </th>
+                        </tr>
+
+                        {% for f in p_files %}
+
+                        <tr class="samplelist">
+                                <td>{{ f.file_title }} </td>
+                             <td>{{ f.file_name }} </td>
+                             <td> {{ f.type }} </td>
+                            <td>{{ f.location }}</td>
+                             <td>{{ f.desc }}</td>
+                             <td>{% if f.url %} <a href="{{ f.url }}"> {{ f.file_title }} </a>
+                                {% endif %} </td>
+                            <td> <a id="go-edit-patientfile" href="/patient/{{patient.pid }}/Files/Edit/?fid={{f.id}}"> <button id="edit-file" class="button btn-sm btn-default" > Edit </button> </a> <button id="delete-file" class="button btn-sm btn-default" onclick="delete_file('{{ f.id }}')"> Delete </button> </td>
+
+                        </tr>
+                        {% endfor %}
+
+                </table>
+	</div>
+</div>
+{% endblock content %}

@@ -66,21 +66,24 @@ table.files.table{
     <div class="main">
 	    <div class="orders">
 	        <div  class="sub-sub-title"> Related Orders 
+{% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
+         <a href="{% url 'add_SampleOrderRel' %}?sid={$ samples[0].id $}"><button class="btn btn-primary btn-sm"> Add Orders </button> </a> 
+
+{% endif %}
 	        </div>
 
 				<table class="table table-bordered table-striped table-hover">
 					<tr>
 
 			            <th> Order </th>
-			            <th> Status </th>
 			            <th> Order Type </th>
+			            <th> relation </th>
 			            <th> Registered Files</th>
 					</tr>
 					<tr ng-repeat="s in samples "  id='{$ w.id $}' class="sample">
 			            <td><a href="/order/{$ s.order_id $}/">{$ s.order_name $}</a></td>
-			            
-			            <td> {$ s.order_status $}</td>
 			            <td>{$ s.order_type $}</td>
+			            <td>{$ s.relation $}</td>
 			            <td>
 
 					 	  		<table class="table table-bordered  files">

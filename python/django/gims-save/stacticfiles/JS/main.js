@@ -1,6 +1,8 @@
 $(function () {
     'use strict';
-
-    $(".popup").draggable();
+	if ( typeof $(".popup").draggable !== 'undefined'){
+		$(".popup").draggable();	
+	}
+    
 });
         

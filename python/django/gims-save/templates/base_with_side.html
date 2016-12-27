@@ -96,7 +96,7 @@ $(function () {
 
 
                 var    urgent = (json_data.category.trim() == 'Urgent Matter')? 'danger' : '';
-                var    recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null )? '' : json_data[i].recipients;
+                var    recipients = (typeof json_data.recipients ==='undefined' || json_data.recipients === null )? '' : json_data.recipients;
                 var    writer = (typeof json_data.writer ==='undefined' || json_data.writer === null )? '' : json_data.writer;
                     hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data.id+'"><td class="date">'+json_data.update_time+
                     '</td><td>'+json_data.category+'</td><td>'+json_data.note+'</td><td>'+writer+'</td><td>'+recipients+'</td></tr>';
@@ -138,7 +138,7 @@ $(function () {
                             {% endfor %}
 
                             {% for message in messages %}
-                            <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                                <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
 
                             {% endfor %}
 
@@ -153,16 +153,16 @@ $(function () {
                         <li>
                                 <a href="{{ most_access.0.url }}">
                                 {% if most_access.0.result != None and most_access.0.result != 'redirect' %}
-                                     {% if  most_access.0.result|length < 20 %}
+                                     {% if  most_access.0.result|length < 25 %}
                                         {{ most_access.0.result|slice:"0:"  }}
                                     {% else %}
-                                            {{ most_access.0.result| slice:"0:15" }} ...
+                                            {{ most_access.0.result| slice:"0:20" }} ...
                                     {% endif %}
                                 {% else %}
-                                    {% if  most_access.0.url|length < 20 %}
+                                    {% if  most_access.0.url|length < 25 %}
                                         {{ most_access.0.url|slice:"1:-1"  }}
                                     {% else %}
-                                            {{ most_access.0.url| slice:"1:15" }} ...
+                                            {{ most_access.0.url| slice:"1:20" }} ...
                                     {% endif %}
                                 {% endif %}
 
@@ -173,16 +173,16 @@ $(function () {
                                  {% if  most_access.0.url != last_access.0.url %}
                                    <a href="{{ last_access.0.url }}"> 
                                    {% if last_access.0.result != None and last_access.0.result != 'redirect' and last_access.0.result != ''%}
-                                       {% if  last_access.0.result|length < 20 %}
+                                       {% if  last_access.0.result|length < 25 %}
                                             {{ last_access.0.result|slice:"0:"  }}
                                         {% else %}
-                                                {{ last_access.0.result| slice:"0:15" }} ...
+                                                {{ last_access.0.result| slice:"0:20" }} ...
                                         {% endif %}
                                    {% else %}
-                                        {% if  last_access.0.url|length < 20 %}
+                                        {% if  last_access.0.url|length < 25 %}
                                                 {{ last_access.0.url|slice:"1:-1" }}
                                         {% else %}
-                                                {{ last_access.0.url| slice:"1:15" }} ...
+                                                {{ last_access.0.url| slice:"1:20" }} ...
                                         {% endif %}
                                     {% endif %}    
                                     </a>

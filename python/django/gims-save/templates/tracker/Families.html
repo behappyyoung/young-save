@@ -1,0 +1,62 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+
+<script type="text/javascript">
+jQuery(document).ready(function() {
+
+
+
+});
+
+</script>
+<div class="tracker">
+	<div class="sub-title"> 
+
+	Patient Family Groups 
+	{% if fid %} 
+		: {{ fid }}
+	{% elif pid %}
+	  <span class="sub-sub-title">	for Patient : {{ family.0.patient }} </span>
+    {% endif %}
+	 </div>
+
+
+	           
+	</div>            
+	<div>
+
+		       <table class="table table-bordered table-striped table-hover">
+                        <tr>
+
+                            <th>  Family ID </th>
+                            <th> Patient ID </th>
+                            <th> Name </th>
+                            <th> ethnicity</th>
+                            <th> MRN </th>
+                           	<th> Gender </th>
+                        </tr>
+
+                        {% for f in family %}
+
+                        <tr class="samplelist">
+                        <td>
+                        	{% ifchanged f.family_id %}
+                        		<a href="/families/?fid={{ f.family_id }}"> 
+                        	
+                        			{{ f.family_id }} </a>
+                        		<a href="/families/Add/?fid={{ f.family_id }}" class="button btn-sm right-button"> Edit </a> 
+                        		{% endifchanged %}
+                        		</td>
+                             <td> <a href="/patient/{{ f.patient }}/"> {{ f.patient }} </a> </td>
+                             <td>{{ f.patient.first_name }} {{ f.patient.middle_name }}  {{ f.patient.last_name }} </td>
+                             <td> {{ f.patient.ethnicity }} </td>
+                            <td>{{ f.patient.mrn }}</td>
+                             <td>{{ f.patient.sex }}</td>
+
+                        </tr>
+                        {% endfor %}
+
+                </table>
+	</div>
+</div>
+{% endblock content %}

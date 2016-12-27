@@ -5,7 +5,13 @@
 .orderlist:hover{
   cursor: pointer;
 }
-
+.patient{
+    width: 110px;
+}
+.blink{
+    background-color: red !important;
+    color:white;
+}
 </style>
 
 <script type="text/javascript">
@@ -44,7 +50,9 @@ if(window.location.hostname =='gims-dev.shc.org'){
                         { field: 'facility', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 },     
 {% if 'Admin' in  request.session.role %}
                         { field: 'patient_id', displayName: 'patient id', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 },    
-{% endif %}                                                                                                    
+{% endif %}     
+                      { field: 'username', displayName: 'Assignee', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 }, 
+
                     ],
                     rowSelection: 'single',
                     // onSelectionChanged: onSelectionChanged,
@@ -77,11 +85,14 @@ if(window.location.hostname =='gims-dev.shc.org'){
             <th> Provider </th>
             <th> Physician </th>
             <th> Facility </th>
-        
             <th> Patient ID </th>
+            <th> <a href="#" ng-click="sortType = 'username'; sortReverse = !sortReverse"> Assignee 
+                <span ng-show="sortType == 'username' && !sortReverse" class="fa fa-caret-down"></span>
+                <span ng-show="sortType == 'username' && sortReverse" class="fa fa-caret-up"></span> </a>
+            </th>
           
 		</tr>
-		<tr ng-repeat="o in orders | filter:searcho | orderBy:sortType:sortReverse "  id='{$ o.order_id $}' class="orderlist" ng-click="onOrderClick(o.order_id);">
+		<tr ng-repeat="o in orders | filter:searcho | orderBy:sortType:sortReverse "  id='{$ o.order_id $}' class="orderlist" ng-class="{ blink : o.flag != '' && o.flag != null }" ng-click="onOrderClick(o.order_id);">
 			<td>{$ o.order_name $}</td>
 			<td>{$ o.order_date $}</td>
 			<td>{$ o.due_date $}</td>
@@ -91,11 +102,12 @@ if(window.location.hostname =='gims-dev.shc.org'){
             <td>{$ o.doctor  $}</td>
             <td>{$ o.facility $}</td>
          
-            <td>{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+            <td class="patient">{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
                 <a href="/patient/{$ o.patient_id $}/"> {$ o.patient_id $} </a>
             {% else %}
                     --
             {% endif %} </td>
+            <td>{$ o.username $}</td>
            
 		</tr>
 	</table>

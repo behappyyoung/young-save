@@ -9,11 +9,22 @@
 </style>
 <script type="text/javascript">
     gimpdevApp.controller('trackerController', ['$scope', '$filter', function($scope, $filter) {
+        $scope.familyObj = {};
+        {% for f in family %}
+            if( typeof $scope.familyObj['{{f.patient_id}}'] === 'undefined' ){
+                     $scope.familyObj['{{f.patient_id}}'] = '{{f.family_id}}';      
+            }else{
+                 $scope.familyObj['{{f.patient_id}}'] = $scope.familyObj['{{f.patient_id}}'] + ', ' +  '{{f.family_id}}'; 
+            }
+           
+        {% endfor %}
+        window.family = $scope.familyObj;
                 {% autoescape off %}
                          $scope.patientList=[];
                          $scope.patients = JSON.parse('{{ patients }}');
                          for(var i=0;i<$scope. patients.length; i++){
                                 $scope.patients[i].fields.id = $scope.patients[i].pk;
+                                $scope.patients[i].fields.family = $scope.familyObj[$scope.patients[i].pk];
                                 $scope.patientList.push($scope. patients[i].fields);
                          }
  if(window.location.hostname =='gims-dev.shc.org'){
@@ -28,7 +39,7 @@
                     $scope.current ={};
                     $scope.searchText = '';
                     $scope.columnTemplate = '<div></div>';
-                    $scope.rowTemplate ='  <div ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"  ui-grid-one-bind-id-grid="rowRenderIndex + \'-\' + col.uid + \'-cell\'"  class="ui-grid-cell"  ng-class="{ \'ui-grid-row-header-cell\': col.isRowHeader }"  role="{$col.isRowHeader ? \'rowheader\' : \'gridcell\'$}"  ui-grid-cell ng-click="grid.appScope.onRowClick(row.entity)"></div>';
+                    $scope.rowTemplate ='  <div ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"  ui-grid-one-bind-id-grid="rowRenderIndex + \'-\' + col.uid + \'-cell\'"  class="ui-grid-cell "  ng-class="{ \'ui-grid-row-header-cell\': col.isRowHeader }"  role="{$col.isRowHeader ? \'rowheader\' : \'gridcell\'$}"  ui-grid-cell ng-click="grid.appScope.onRowClick(row.entity)"></div>';
                     $scope.filterOptions = { filterText: ''    };
                      $scope.gridOptions = { data: 'patientList',
                         enableFiltering:true,
@@ -36,13 +47,14 @@
                         enableColumnResize : true,
                          excludeProperties: ['id'],
                           columnDefs :[
-                             { field: 'pid',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Patient ID', width: 150 },
+                             { field: 'pid',cellTemplate:'<div class="ui-grid-cell-contents pointer"> {$ COL_FIELD $}  </div>', displayName: 'Patient ID', width: 150 },
                              { field: 'last_name',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Last Name', width: 150 },
-                             { field: 'first_name',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'First Name', width: 150 },
+                             { field: 'first_name',cellTemplate:'<div class="ui-grid-cell-contents "> {$ row.entity.first_name $} / {$ row.entity.middle_name $}  </div>', displayName: 'First / Middle Name', width: 200 },
                              { field: 'mrn',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Medical Record Number'},
-                             { field: 'sex',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Gender', width: 150 },
+                             { field: 'sex',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Gender', width: 80 },
                              { field: 'race',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Ethnicity', width: 150 },
                              { field: 'dob',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Birth Date', width: 150 },
+                              { field: 'family',cellTemplate:'<div class="ui-grid-cell-contents "> <a href="/families/?fid={$ COL_FIELD $}" >{$ COL_FIELD $} </a> </div>', displayName: 'Family', width: 100 },
                              ]
                    };
 

@@ -1,0 +1,64 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+
+<script type="text/javascript">
+jQuery(document).ready(function() {
+
+
+
+});
+
+</script>
+<div class="tracker">
+	<div class="sub-title"> 
+
+	Order Groups 
+	{% if gid %} 
+		: {{ gid }}
+	{% elif oid %}
+	  <span class="sub-sub-title">	for Order : {{ groups.0.order }} </span>
+    {% endif %}
+	 </div>
+
+
+	           
+	</div>            
+	<div>
+
+		       <table class="table table-bordered table-striped table-hover">
+                        <tr>
+
+                            <th>  Group ID </th>
+                            <th> Order ID </th>
+                            <th> Order Name </th>
+                            <th> affected </th>
+                           	<th> Status  </th>
+                           	<th> Patient ID  </th>
+                        </tr>
+
+                        {% for g in groups %}
+
+                        <tr class="grouplist">
+                        <td>
+                        	{% ifchanged f.family_id %}
+                        		<a href="/order/groups/?gid={{ g.group_id }}"> 
+                        	
+                        			{{ g.group_id }} </a>
+                        		<a href="/order/groups/Add/?gid={{ g.group_id }}" class="button btn-sm right-button"> Edit </a> 
+                        		{% endifchanged %}
+                        		</td>
+                             <td> <a href="/order/{{ g.order.id }}/"> {{ g.order.id }} </a> </td>
+                             <td><a href="/order/{{ g.order.id }}/"> {{ g.order }}  </a> </td>
+                            <td> {{ g.affected_status }} </td>
+                             <td>{{ g.order.status }}</td>
+								<td> 
+								{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+									<a href="/patient/{{ g.order.patient_id }}/"> {{ g.order.patient_id }}</td>
+								{% endif %}	
+                        </tr>
+                        {% endfor %}
+
+                </table>
+	</div>
+</div>
+{% endblock content %}

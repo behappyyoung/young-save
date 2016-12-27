@@ -19,7 +19,16 @@
 .genelist .name{
     text-transform: capitalize;
 }
+.top-hr {
+    border-top: dotted 1px #242525;
+    padding-top: 10px;
+}
 
+.flag{
+    width: 100%;
+    background-color: red;
+    color : white;
+}
 
 </style>
 
@@ -44,20 +53,7 @@ if(window.location.hostname =='gims-dev.shc.org'){
                 console.log('orders', $scope.orders, 'phenolists', $scope.phenolists, 'f', $scope.father, 'm', $scope.mother,'proband', $scope.proband, 'sibling', $scope.sibling);
 
  }	
-     }]);
 
-var family=[];
-{% autoescape off %}
-        var orders = {{orders}};                     
-{% endautoescape %}
-
-var proband={'mrn': '{{patient.pid}}'};
- for(var i=0 ; i<orders.length; i++){
-
-        family.push({relative:orders[i].patient_id, relationship: orders[i].rel_name, ethnicity: '', mrn: orders[i].patient_id});
-
-}
-{% include "com/js_relation_tree.js" %}
 
     $('#btn-history').on('click', function () {
         // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
@@ -65,7 +61,7 @@ var proband={'mrn': '{{patient.pid}}'};
             url:'/mybackend/get_log/order/',
             type:'json',
             method:'POST',
-            data:{'oid': $scope.orders[0].order_id},
+            data:{'oid': $scope.orders[0].orderid},
             error: function()
             {
                 //file not exists
@@ -94,7 +90,7 @@ var proband={'mrn': '{{patient.pid}}'};
             url:'/mybackend/get_notes/',
             type:'json',
             method:'POST',
-            data:{'oid': $scope.orders[0].order_id},
+            data:{'oid': $scope.orders[0].orderid},
             error: function()
             {
                  console.log('error');
@@ -125,6 +121,21 @@ var proband={'mrn': '{{patient.pid}}'};
          });
     });
 
+     }]);
+
+var family=[];
+{% autoescape off %}
+        var orders = {{orders}};                     
+{% endautoescape %}
+
+var proband={'mrn': '{{patient.pid}}'};
+ for(var i=0 ; i<orders.length; i++){
+
+        family.push({relative:orders[i].patient_id, relationship: orders[i].rel_name, ethnicity: '', mrn: orders[i].patient_id});
+
+}
+{% include "com/js_relation_tree.js" %}
+
 
 
 
@@ -153,13 +164,10 @@ var proband={'mrn': '{{patient.pid}}'};
         <div id="popup"> </div> 
     </div>
 
-<!--     <div class="notes">
-        <button class="close" onclick="$('.notes').css('display', 'none');">X</button>
 
-        <div id="notes"> </div> 
-    </div> -->
 
-    <div class="details-top">
+    <div class="details details-top">
+        <div ng-if="orders[0].flag !=''" > <div class="flag blink text-center"> {$ orders[0].flag $} </div> </div>
         <div class="main-left text-center">
             <div> <div class="label"> Type </div> <div class="value">{$ orders[0].type $} </div></div>
 
@@ -173,60 +181,36 @@ var proband={'mrn': '{{patient.pid}}'};
             <div> <div class="label"> Ordering Physician  </div> <div class="value">{$ orders[0].doctor $}</div> </div>
              <div> <div class="label">  Physician Contact  </div> <div class="value">{$ orders[0].doctor_phone $}</div> </div>
         </div>
+
     </div>
-
-    <div class="main">
-        <div class="main-left">
-            <div  class="sub-sub-title"> Related Samples 
-                {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
-                         <a href="{% url 'add_SampleOrderRel' %}?oid={$ orders[0].orderid $}"><button class="btn btn-primary btn-sm  right-button"> Add Samples </button> </a> 
-
-                {% endif %}
-            </div>
-        	<table class="table table-bordered table-striped table-hover">
-        		<tr>
-        			<th> Sample </th>
-                    <th> Container </th>
-                    <th> Source </th>
-                    <th> Relations </th>
-                    <th> Patient ID </th>
-        		</tr>
-        		<tr ng-repeat="o in orders"  id='{$ o.id $}' class="samplelist">
-
-        			<td><a href="/sample/{$ o.sample_id $}/">{$ o.asn $}</a></td>
-                    <td>{$ o.container $}</td>
-                    <td>{$ o.source $}</td>
-                    <td> 
-                    <a href="{% url 'add_SampleOrderRel' %}?oid={$ orders[0].orderid $}&sid={$ o.sample_id $}&rid={$ o.relation_id $}">{$ o.rel_name $} </a>
-
-                    </td>
-                    <td>
-{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
-                        <a href="/patient/{$ o.patient_id $}"> {$ o.patient_id$} </a>
-{% endif %} 
-
-
-        		</tr>
-        	</table>
-           {% include "com/html_relation_tree.html" %}
-
-
-        </div>
-       <div class="main-right">
-
-            <div class="phenotypes">
-                <div  class="sub-sub-title">  Phenotypes 
-
-                    
-                </div>
-                    <div class="physician-phenotypes text-center">
-                        <label> Physician Phenotypes</label>
-                        <textarea readonly="readonly" > {$ orders[0].phenotype $} </textarea>
+    <div class=" details-bottom">
+                      <div>  
+                            <div class="label"> Physician Phenotypes</div>
+                                 <div class="value"> {$ orders[0].physician_phenotype $} </div>
+                         </div>
+                          <div class="">
+                                <label class="label"> Phenotypes</label>
+                        <div class="value" > {$ orders[0].phenotype $} </div>
                      </div>
-            {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
+
+                         <div>
+                         <div class="label"> Memo / Desc </div>
+                        <div class="value"> {$ orders[0].desc $} </div>
+                        </div>
+  </div>
+    <div class="main top-hr">
+
+         <div class="main-left">
+        
+                     <div class="phenotypes">
+                 <div  class="sub-sub-title">  Phenotypes 
+                 {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
                              <a href="/order/{$ orders[0].orderid $}/phenotypes/"><button class="btn btn-primary btn-sm right-button"> Add Phenotypes </button> </a> 
 
                     {% endif %}
+                </div>
+                  
+            
                         <table class="table table-bordered table-striped table-hover">
                         <tr>
                             <th> HPO ID </th>
@@ -256,6 +240,10 @@ var proband={'mrn': '{{patient.pid}}'};
                     </div>
                     {% endif %}
             </div>
+        </div>    
+       <div class="main-right">
+
+
 
             <div class="genelist">
 
@@ -292,8 +280,81 @@ var proband={'mrn': '{{patient.pid}}'};
             </div>
         </div>
     </div>
+    <div class="top-hr">
+        <div  class="sub-sub-title"> Related Orders Groups 
+                {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
+                         <a href="/order/groups/New/"><button class="btn btn-primary btn-sm  right-button"> New Order Group </button> </a> 
+
+                {% endif %}
+            </div>
+            <table class="table table-bordered table-striped table-hover">
+                <tr>
+                    <th> Group ID </th>
+                    <th> Orders </th>
+                    <th>  affected </th>
+                    <th> Relations </th>
+                    <th> Patient ID </th>
+                </tr>
+                 {% for g in groups %}
+                    <tr class="grouplist">
+
+                    <td>
+                    {% ifchanged g.group_id %}
+                        <a href="/order/groups/?gid={{ g.group_id }}">{{ g.group_id}}</a>
+                        <a href="/order/groups/Add/?gid={{ g.group_id }}" class="btn btn-default btn-sm  right-button"> Edit </a>
+                    {% endifchanged %}    
+                    </td>
+                    <td> <a href="/order/{{ g.order_id }}/"> {{ g.order_name }} </a> </td>
+
+                    <td> {{ g.affected_status }} </td>
+                    <td>{{ g.rel_name }}</td>
+                    
+                    <td>
+{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+                        <a href="/patient/{{ g.patient_id }}/">{{ g.patient_id }}  </a>
+{% endif %}         
+                    </td>
+
+
+                    </tr>
+                    {% endfor %}
+            </table>
+            <!-- {% include "com/html_relation_tree.html" %} -->
+</div>
     <div class="clearfix"></div>
-	<div class="sub-sub-title"> Related Analyses </div>	
+        <div class="main top-hr">
+        <div class="main-left">
+            <div  class="sub-sub-title"> Related Samples 
+<!--                 {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
+                         <a href="{% url 'add_SampleOrderRel' %}?oid={$ orders[0].orderid $}"><button class="btn btn-primary btn-sm  right-button"> Add Samples </button> </a> 
+
+                {% endif %} -->
+            </div>
+            <table class="table table-bordered table-striped table-hover">
+                <tr>
+                    <th> Sample </th>
+                    <th> Container </th>
+                    <th> Source </th>
+                    <th> Patient ID </th>
+                </tr>
+                <tr ng-repeat="o in orders"  id='{$ o.id $}' class="samplelist">
+
+                    <td><a href="/sample/{$ o.sampleid $}/">{$ o.asn $}</a></td>
+                    <td>{$ o.container $}</td>
+                    <td>{$ o.source $}</td>
+                    <td>
+{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+                        <a href="/patient/{$ o.patient_id $}"> {$ o.patient_id $} </a>
+{% endif %} 
+
+
+                </tr>
+            </table>
+        </div>
+        <div class="main-right">
+            
+           
+            <div class="sub-sub-title"> Related Analyses </div> 
                      <table class="table table-bordered table-striped table-hover">
                     <tr>
 
@@ -312,6 +373,13 @@ var proband={'mrn': '{{patient.pid}}'};
                          <!-- <td>{$ wf.loomResponse $}</td> -->
                     </tr>
                 </table>
+
+        </div>
+        <div class="clearfix"></div>
+    </div>
+
+
+
     </div>
 
 </div>

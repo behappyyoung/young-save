@@ -61,9 +61,7 @@ function formSubmit(action){
 Patient Relationship </div>
 
 <div class="form-wrapper">
-		{% if message %}
-		<div class="alert alert-info"> {{message}} </div>
-		{% endif %}
+
             <form action="/patient/{{ pid }}/relationship/" method="post" id="relForm">
                 {% csrf_token %}
                 {{ form }}

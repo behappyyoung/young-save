@@ -17,20 +17,43 @@
 		height: 100px;
 		margin-left: 150px;
 	}
-	form label[for='id_phenotype'], form label[for='id_desc']{
-		display: block;
+	form label[for='id_desc'], form label[for='id_phenotype']{
+        display: block;
+    }
+	form input[type="radio"] {
+		width: 20px;
 	}
-	/*form textarea:after { content: '\00000A';white-space: pre; }*/
+	form input[id*='physician_phenotype']{
+		width: 800px;
+	}
 </style>
+<script type="text/javascript">
+jQuery(document).ready(function() {
+	// $('input#id_physician_phenotype').after('<br />');
 
+	if ($('input#id_flag').val() == ''){
+			$('input#id_flag').before('<input type="radio" name="rflag" value="yes" > Yes <input type="radio" name="rflag" value="no"  checked="checked"> Clear ')
+	}else{
+			$('input#id_flag').before('<input type="radio" name="rflag" value="yes"  checked="checked"> Yes <input type="radio" name="rflag" value="no"> Clear ')
+	}
+	$('input[type="radio"]').on('click', function(argument) {
+		console.log(this.value);
+		if(this.value =='no'){
+			$('input#id_flag').val('');
+		}else{
+			$('input#id_flag').val('Flag Message :');
+		}
+	})
+});
+</script>
  <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" />  Order : {{form.instance.order_name}} </div>
 <div>
             <form action="/order/{{oid}}/edit/" method="post">
                 {% csrf_token %}
                 {{ form }}
                 <div class="action">
-                	<button class="button btn  btn-default" > Cancel </button> </a>
-                	<input type="submit" value="  Save " class="button btn btn-primary" /> <a href="/order/{{oid}}/" >   
+                	<a href="/order/{{oid}}/" class="button btn  btn-default" >  Cancel  </a>
+                	<input type="submit" value="  Save " class="button btn btn-primary" /> 
                 </div>
             </form>
 </div>            
