@@ -86,8 +86,49 @@
         });
 </script>
 
-    <h4>  Queue Status </h4>
-    <div class="queue" id="order_status">
+    <!-- <h4> Order Status </h4> -->
+    <div class="chart-wrapper flex" id="order_by_status_chart" >
+        <div class="flex-left">
+            <div class="sub-sub-title"> Total Order Status</div>
+             <div id="donut_order_status_current"  class="chart-donut" ></div>
+
+                <div class="chart-label">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                            <th></th>
+                            <th> Order status </th>
+                            <th> Count </th>
+                            <th> % </th>    
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="s in order_by_status_all_arr "  style="color:{$ s.color $};" >
+                                <td> {$ $index + 1 $} </td> <td>{$ s.label | uppercase $} </td> <td>{$  s.value $}</td> <td> {$ (( s.value / total_value ) * 100).toFixed(2) $} </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+        </div>
+        <div class="flex-right">
+            <div class="sub-sub-title"> Period Status</div>
+            <div id="donut_order_status"  class="chart-donut" ></div>
+                <div class="chart-label">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                            <th></th>
+                            <th> Order status </th>
+                            <th> Count </th>
+                            <th> % </th>    
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="s in order_by_status_arr "  style="color:{$ s.color $};" >
+                                <td> {$ $index + 1 $} </td> <td>{$ s.label | uppercase $} </td> <td>{$  s.value $}</td> <td> {$ (( s.value / total_value ) * 100).toFixed(2) $} </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+        </div>
+    </div>
+    <!-- <div class="queue" id="order_status">
         <div class="bar">
             <div id="ready" class="ready"> 2   <div class="detail ready"> this is details about ready</div></div>
             <div id="assigned" class="assigned"> 3  <div class="detail assigned"> this is details about assigned</div></div>
@@ -110,4 +151,4 @@
 
             <div> <div class="color overdue"> &nbsp;</div><span> Overdue Orders : </span> <span> 3 (15%)</span></div>
         </div>
-    </div>
+    </div> -->

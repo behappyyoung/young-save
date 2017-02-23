@@ -45,6 +45,18 @@
 
     </style>
 <script>
+
+
+    function arcTween(newAngle) {
+        return function(d) {
+            var interpolate = d3.interpolate(d.endAngle, newAngle);
+            return function(t) {
+                d.endAngle = interpolate(t);
+                return arc(d);
+            };
+        };
+    }
+
        function calcPath (value, total, R) {
             var center;
             var alpha = 360 / total * value,
@@ -125,6 +137,29 @@
 
 
   jQuery(document).ready(function() {
+    var tau = 2 * Math.PI;
+    var arc = d3.arc()
+    .innerRadius(80)
+    .outerRadius(140)
+    .startAngle(0);
+    var svg = d3.select(".completion-rate svg"),
+            width = +svg.attr("width"),
+            height = +svg.attr("height"),
+            g = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+    // Add the background arc, from 0 to 100% (tau).
+    var background = g.append("path")
+    .datum({endAngle: tau})
+    .style("fill", "#ddd")
+    .attr("d", arc);
+    // Add the foreground arc in orange, currently showing 12.7%.
+    var foreground = g.append("path")
+    .datum({endAngle: 0.127 * tau})
+    .style("fill", "orange")
+    .attr("d", arc);
+
+    // foreground.transition()
+    //         .duration(750)
+    //         .attrTween("d", arcTween(0.9 * tau));
 
             var my_value=0;
             var value_1 = 0
@@ -151,40 +186,37 @@
                 }
             }
 
-             draw_completion_rate = function(){
+             // // draw_completion_rate = function(){
  
-                             my_value=0;
-                        value_1 = 0
-                         actual_1 = 16;
-                         actual_value = 8;
-                     my_intvar_1 = setInterval(myUpdate_1, 100);
-                      my_intvar = setInterval(myUpdate, 100); 
-             }
+             //                 my_value=0;
+             //            value_1 = 0
+             //             actual_1 = 16;
+             //             actual_value = 8;
+             //         // my_intvar_1 = setInterval(myUpdate_1, 100);
+             //          // my_intvar = setInterval(myUpdate, 100); 
+             // // }
         });
 </script>
 
-  <div class="report chart-wrapper ">
-        <h4>  Completion Rate  </h4>
-        <!-- <div  class="pull-right datarange"> -->
-         <!-- For Period : <input type="text" name="daterange" id='daterange' value="07/15/2016 - 08/15/2016"> -->
-         <div class="period">
-            <select id="select-processing-time">
-            <option> Last 6 Month </option>
-            <option> Last Month </option>
-            <option> Last Year </option>
-            </select>
-         <!-- </div> -->
+  <div class="report chart-wrapper completion-rate">
+ <h4>  Completion Rate  </h4>
+  
+ <svg width="400" height="300"></svg>
+       
         </div>
         <div class="activity">
             <h5>  Order Completion Rate </h5>
-            <div class="chartbox">
+            
+<!--             <div class="chartbox">
              <div class="data">  8 / 20 </div>
+
                 <div class="chart">
+
                     <span class="" id="progress_2" ></span>
                 </div> <br />
                 <div class="actual"><span id="actual_2" ></span> %</div>
 
-            </div>
+            </div> -->
 
         </div>
 

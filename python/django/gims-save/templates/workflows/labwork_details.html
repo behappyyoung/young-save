@@ -1,0 +1,300 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+{% load staticfiles %}
+ <script src="{% static 'JS/jquery.fileupload.js' %}"></script>
+
+<style>
+
+td, th {
+    padding: 5px;
+
+}
+.for-print{
+    display: none;
+}
+.tube{
+    display: inline-block;
+    width: 100px;
+    max-height: 500px;
+}
+.intube{
+    display: inline-block;
+    width: 100px;
+    height: 40px;
+    background-color: white;
+    margin: 1px;
+    vertical-align:top;
+    text-align: center;
+    font-size: 12px;
+    padding-top: 5px;
+}
+.QREDO{
+    border:2px solid orange;
+}
+</style>
+<script type="text/javascript">
+	gimsApp.controller('workflowsController', ['$scope', '$http', function($scope, $http) {
+                {% autoescape off %}
+
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+
+ {% endif %}
+
+   
+ 	// var tubedetails = ' <table class="table table-stripped text-center"> <tr><th> tube number </th>  <th> asn </th> <th> container # </th>  </tr>';
+         $scope.redo_list=[];
+ 		 {% for r in redo_list %}
+ 	// 	 	tubedetails += '<tr> <td> {{s.tube_number}} </td><td> {{s.sample.asn }}</td><td> {{s.container}}</td> </tr>';
+ 		     $scope.redo_list.push({{forloop.counter}}+'-' + {{r.order_id}} + '-' + {{r.sample_id}} + '-' + {{r.container}} );
+
+ 		 {% endfor %}
+ 	// 	 tubedetails += '</table>';
+     console.log($scope.redo_list);
+      // $('#print-title').html({{workflow.id}}+'-R');
+
+     $scope.Print = function(){
+ 		 var divElements = $('#for-print').html();
+ 		var printWindow = window.open("", "_blank", 'height=590,width=1100');
+                            printWindow.document.open();
+                            printWindow.document.write('<html><head><title>{{workflow.name}}</title><link rel="stylesheet" type="text/css" href="/static/CSS/print.css?v=12"></head><body><div id="printingDiv">');
+                            printWindow.document.write(divElements);
+                            printWindow.document.write('</div></body></html>');
+                             setTimeout(function() {
+                                 printWindow.print();
+                                 printWindow.close();
+
+                             }, 100);
+ 	}
+
+    $scope.newWork = function() {
+         var name = $('#print-title').text();
+         var type = '{{title}}'.substring(0, 1);
+        $http({
+            
+                            headers: {
+                            'Content-Type': 'application/json'
+                            },
+                            method:'POST', 
+                            url:'/lab/save/'+type+'/', 
+                            data:{
+                                'name': name,
+                                'sample_list': $scope.redo_list.join(',')
+                            }
+                        }).then(function(response){
+                            console.log(response.data);
+                                if(response.data='None'){
+                                    confirm('New Workflow Created');
+                                    $scope.Redo();
+
+                                    window.location.href = '/lab/#{{title}}';
+                                }else{
+                                    alert('error - ' + response.data ) ;    
+                                }
+                                
+                        });
+    }
+
+    $scope.Redo = function(){
+         var divElements = $('#for-redo').html();
+        var printWindow = window.open("", "_blank", 'height=590,width=1100');
+                            printWindow.document.open();
+                            printWindow.document.write('<html><head><title>{{workflow.name}}</title><link rel="stylesheet" type="text/css" href="/static/CSS/print.css?v=12"></head><body><div id="printingDiv">');
+                            printWindow.document.write(divElements);
+                            printWindow.document.write('</div></body></html>');
+                             setTimeout(function() {
+                                 printWindow.print();
+                                 printWindow.close();
+
+                             }, 100);
+    }
+}]);
+
+$(function () {
+    'use strict';
+    // Change this to the location of your server-side upload handler:
+           var uploadUrl = "/mybackend/save_file/";
+            $('#fileupload').fileupload({
+                url: uploadUrl,
+                dataType: 'json',
+                formData: {type: '{{title}}', id:'{{workflow.id}}', file_type:'Data File'},
+                done: function (e, data) {
+                    console.log(e, data, data.result);
+                    location.reload();
+                },
+            }).prop('disabled', !$.support.fileInput)
+                .parent().addClass($.support.fileInput ? undefined : 'disabled');
+
+});
+
+</script>
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="">
+
+
+
+	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" /> {{title}} Details for : {{workflow.name}}
+    <a class="button right-button btn btn-sm" href="/lab/#{{title}}"> Back </a>
+	</div>  
+
+
+	        <table class="table table-bordered text-center">
+                <tr>
+                    <th> ID </th>
+                    <th> Name </th>
+                    <th> start </th>
+                    <th> updated </th>
+                    <th> status </th>
+                   
+
+                </tr>
+
+
+                    <tr class="workflow">
+                        <td>{{workflow.id}}</td>
+                        <td>{{workflow.name}}</td>
+                        <td>{{ workflow.created_date }}</td>
+                        <td>{{ workflow.updated_date }}</td>
+                        <td>{{ workflow.get_status_display }}</td>
+                        
+                     </tr>
+            </table>
+
+
+	        <table class="table table-bordered table-striped table-hover text-center">
+                <tr>
+                	<th> Tube Number </th>
+                    <th> Sample ans </th>
+                    <th> container </th>
+                    <th> sample name  </th>
+                    <th> order name </th>
+                    <th> status </th>
+                    <th>result</th>
+                </tr>
+
+                {% for s in wf_status %}
+                    <tr class="workflow {{ s.status}}">
+                        <td> {{s.tube_number}}</td>
+                        <td>{{s.sample.asn}}</td>
+                        <td>{{s.container}}</td>
+                        <td>{{ s.sample }}</td>
+                        <td>{{ s.order }}</td>
+                        <td>{{ s.get_status_display }}</td>
+                        <td> {{ s.result|cut:"None" }} </td>
+                     </tr>
+                 {% endfor %}
+            </table>
+
+            <button class="btn btn-primary btn-sm" ng-click="Print()"> Print Tube </button> 
+            <button class="btn btn-primary btn-sm right-button" ng-click="newWork()"> Redo Failed ones </button>  
+            <label for="fileupload" class="btn btn-success btn-sm fileinput-button" id="label-fileupload"> Upload Data File</label>
+            <input class="btn btn-success fileinput-button" id="fileupload" type="file" style="visibility: hidden;" name="files" / >
+
+              
+
+            <div class="sub-sub-title">
+                Related Files
+            </div>
+            <table class="table table-bordered table-striped table-hover text-center">
+                <tr>
+                    <th> file name</th>
+                    <th> type </th>
+                    <th> upload time </th>
+                    <!-- <th> clould id  </th> -->
+                    <th> url </th>
+
+                </tr>
+
+                {% for f in files %}
+                    <tr class="workflow">
+                        <td> {{f.name}}</td>
+                        <td>{{f.file_type}}</td>
+                        <td>{{f.upload_date}}</td>
+                        <!-- <td>{{ f.cloud_id }}</td> -->
+                        <td> <a href="{{ f.url }}" target="_new">{{ f.url }} </a></td>
+                     </tr>
+                 {% endfor %}
+            </table>
+</div>
+
+
+
+</div>
+
+{% load custom_filter %}
+
+<div class="for-print" id="for-print">
+    <div class="flex">
+        <div id="left-flex" class="left-flex">
+       
+                    <div class="tube"> 
+                    
+                        {% for s in 49|my_range %}
+                            {% if forloop.counter0 == 12 or forloop.counter0 == 24 or forloop.counter0 == 36 %}
+                                </div>
+                                 <div class="tube"> 
+                            {% endif %}
+                            <div class="intube">
+                                {% list_index_data wf_status forloop.counter0 'tube_number' %} 
+                                <br /> 
+                                {% list_index_data wf_status forloop.counter0 'asn' %}</div>
+                            
+                        {% endfor %}
+
+                    </div>
+
+                    
+        </div>
+        <div class="right-flex">
+            <table class="table table-stripped text-center"> 
+                <tr><th> tube number </th>  <th> asn </th> <th> container # </th> <th>result</th> </tr>
+
+                 {% for s in wf_status %}
+                    <tr> <td> {{s.tube_number}} </td><td> {{s.sample.asn }}</td><td> {{s.container}}</td> <td> {{s.result|cut:"None"}}</td> </tr>
+                 {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div class="for-print" id="for-redo">
+    <div class="flex">
+        <div id="left-flex" class="left-flex">
+       
+                    <div class="tube"> 
+                    
+                        {% for s in 49|my_range %}
+                            {% if forloop.counter0 == 12 or forloop.counter0 == 24 or forloop.counter0 == 36 %}
+                                </div>
+                                 <div class="tube"> 
+                            {% endif %}
+                            <div class="intube">
+                                {% if redo_list|list_index:forloop.counter0 %}
+                                    {{ forloop.counter }} 
+                                {% endif %}
+                                <br /> 
+                                {% list_index_data redo_list forloop.counter0 'asn' %}</div>
+                            
+                        {% endfor %}
+
+                    </div>
+
+                    
+        </div>
+        <div class="right-flex">
+            <div class="sub-sub-title" id="print-title"> {{workflow.name}}-R </div>
+            <table class="table table-stripped text-center"> 
+                <tr><th> tube number </th>  <th> asn </th> <th> container # </th> <th>result</th> </tr>
+
+                 {% for r in redo_list %}
+                    <tr> <td> {{ forloop.counter }}  </td><td> {{r.sample.asn }}</td><td> {{r.container}}</td> <td> {{r.result|cut:"None"}}</td> </tr>
+                 {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

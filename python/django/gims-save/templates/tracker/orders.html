@@ -8,14 +8,14 @@
 .patient{
     width: 110px;
 }
-.blink{
+.flag{
     background-color: red !important;
     color:white;
 }
 </style>
 
 <script type="text/javascript">
-	  gimpdevApp.controller('trackerController', ['$scope', function($scope) {
+	  gimsApp.controller('trackerController', ['$scope', function($scope) {
                 {% autoescape off %}
                             $scope.orders = {{orders}};
 if(window.location.hostname =='gims-dev.shc.org'){
@@ -45,8 +45,8 @@ if(window.location.hostname =='gims-dev.shc.org'){
                         { field: 'source', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 80 },                            
                         { field: 'type_name', displayName:'Type', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 80 },  
                         { field: 'status_name',  displayName:'Status', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 },  
-                        { field: 'provider', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 }, 
-                        { field: 'doctor', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 },
+                        { field: 'provider_name', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 }, 
+                        { field: 'physician_lastname', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 },
                         { field: 'facility', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 },     
 {% if 'Admin' in  request.session.role %}
                         { field: 'patient_id', displayName: 'patient id', cellTemplate:'<div class="ui-grid-cell-contents" ng-click="grid.appScope.onRowClick(row.entity);"> {$ COL_FIELD $}  </div>', width: 100 },    
@@ -63,10 +63,17 @@ if(window.location.hostname =='gims-dev.shc.org'){
 
 <div ng-controller="trackerController" class="tracker">
 
-
-
     <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" /> <span>Orders</span>  </div>
-	<div class="menu-search"> <input type="text" ng-model="searcho"> <button> Search </button></div>
+	<div class="menu-search">
+        
+         <button  style="margin-right: 10px;"> Search </button><input type="text" ng-model="searcho">
+
+        <button ng-click="completed = !completed" style="margin-left: 20px;">
+             <span ng-show="!completed">    Show Completed </span> 
+             <span ng-show="completed">    Hide Completed </span> 
+        </button>
+
+    </div>
 	<table class="table table-bordered table-striped table-hover">
 		<tr>
 			<th>  <a href="#" ng-click="sortType = 'order_name'; sortReverse = !sortReverse"> Name 
@@ -92,14 +99,14 @@ if(window.location.hostname =='gims-dev.shc.org'){
             </th>
           
 		</tr>
-		<tr ng-repeat="o in orders | filter:searcho | orderBy:sortType:sortReverse "  id='{$ o.order_id $}' class="orderlist" ng-class="{ blink : o.flag != '' && o.flag != null }" ng-click="onOrderClick(o.order_id);">
+		<tr ng-repeat="o in orders | filter:searcho | orderBy:sortType:sortReverse "  ng-show=" completed || o.status_name !='COMPLETED'" id='{$ o.order_id $}' class="orderlist" ng-class="{ flag : o.flag != '' && o.flag != null }" ng-click="onOrderClick(o.order_id);">
 			<td>{$ o.order_name $}</td>
 			<td>{$ o.order_date $}</td>
 			<td>{$ o.due_date $}</td>
 			<td>{$ o.status_name $}</td>
             <td>{$ o.type $}</td>
-            <td>{$ o.provider $}</td>
-            <td>{$ o.doctor  $}</td>
+            <td>{$ o.provider_name $}</td>
+            <td>{$ o.physician_firstname  $} {$ o.physician_lastname  $}</td>
             <td>{$ o.facility $}</td>
          
             <td class="patient">{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  

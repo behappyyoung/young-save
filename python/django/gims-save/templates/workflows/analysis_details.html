@@ -21,7 +21,7 @@ td, th {
 .key { color: blue; }
 </style>
 <script type="text/javascript">
-	gimpdevApp.controller('analysissController', ['$scope', '$sce', function($scope, $sce) {
+	gimsApp.controller('analysissController', ['$scope', '$sce', function($scope, $sce) {
 		  var None = 'none';
                 {% autoescape off %}
                             $scope.analysis = {{ analysis }};

@@ -1,0 +1,126 @@
+
+<script type="text/javascript">
+
+ jQuery(document).ready(function() {
+        $('#select-processing-time-by-step').change(function(){     // when period updated
+         console.log(this.value);
+         options='test';
+            if(this.value =='day'){
+
+            }else if(this.value =='week'){
+
+            }else{
+
+            }
+            draw_processing_time_by_step(options);
+        });
+    draw_processing_time_by_step();      // default
+ });
+</script>
+<div class="chart-wrapper" >
+    <h4> Average Processing Time by Steps  </h4>
+
+<div id="bar_processing_time_by_step" class="chart-bar" style="min-width: 610px; max-width: 800px; height: 400px; margin: 0 auto"></div>
+
+</div>
+
+<script type="text/javascript">
+
+    draw_processing_time_by_step = function(options){
+        var categories = [];
+        var total_day_values = [];
+        var total_time_values = [];
+        var category_type='';
+{% for mykey,myvalue in processing_time.total.items %}
+    if('{{mykey}}' == 'type'){
+        category_type = '{{myvalue}}';
+    }else{
+        categories.push('{{mykey}}');
+        total_day_values.push(parseInt('{{myvalue.a_day}}'));
+        total_time_values.push(parseInt('{{myvalue.a_time}}') /60 );
+    }
+
+{% endfor %}
+    if ( category_type == 'days' ){
+        var total_values = total_day_values;
+    }else{
+        var total_values = total_time_values;
+    }
+
+    var period_values =[];
+   {% for mykey,myvalue in processing_time.period.items %}
+    if('{{mykey}}' != 'type'){
+           if ( category_type == 'days' ){
+                 period_values.push( parseInt('{{myvalue.a_day}}') );
+            }else{
+                period_values.push( parseInt('{{myvalue.a_time}}')/60 );
+            }
+    }
+
+{% endfor %} 
+console.log('categories', categories.sort(), 'category_type', category_type, 'total_values', total_values, 'period_values', period_values);
+        var process_by_step_chart = $('#bar_processing_time_by_step').highcharts({
+            chart: {
+                type: 'bar'
+            },
+            title: {
+                text: '  '
+            },
+            subtitle: {
+                text: ''
+            },
+            xAxis: {
+                categories: categories,
+                title: {
+                    text: null
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Processing Time ( Hours )',
+                    align: 'high'
+                },
+                labels: {
+                    overflow: 'justify'
+                }
+            },
+            tooltip: {
+                valueSuffix: category_type
+            },
+            plotOptions: {
+                bar: {
+                    dataLabels: {
+                        enabled: true
+                    }
+                }
+            },
+            legend: {
+                layout: 'vertical',
+                align: 'right',
+                verticalAlign: 'top',
+                x: -40,
+                y: 80,
+                floating: true,
+                borderWidth: 1,
+                backgroundColor: ((Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'),
+                shadow: true
+            },
+            credits: {
+                enabled: false
+            },
+            series: [{
+                name: 'Total Average',
+                data: total_values
+            }, {
+                name: 'Period Average',
+                data: period_values
+            }]
+        });
+        window.pchart = process_by_step_chart;
+         console.log(options, process_by_step_chart);
+    }
+
+
+
+</script>

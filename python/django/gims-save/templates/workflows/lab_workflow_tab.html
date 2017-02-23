@@ -1,0 +1,199 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+
+
+
+<style>
+
+td, th {
+    padding: 5px;
+
+}
+
+
+</style>
+<script type="text/javascript">
+gimsApp.controller('workflowsController', ['$scope', function($scope) {
+                {% autoescape off %}
+                            $scope.workflows = [];
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+                 console.log('workflows', $scope.workflows);
+ {% endif %}
+ 		var today = new Date();
+ 		if(window.location.search.substr(1)){
+                    var inputdate = window.location.search.substr(1).split('~');
+                    sdate = inputdate[0];
+                    edate = inputdate[1];
+
+        }else{
+        	if(today.getDate() < 7){
+        		var lastDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+        		if( today.getMonth()<1){
+					sdate = (today.getFullYear()-1)+'-'+'12'+'-'+('0' + (today.getDate()+25) ).substr(-2);
+        		}else{
+        			sdate = today.getFullYear()+'-'+('0'+( parseInt(today.getMonth()) )).substr(-2)+'-'+('0' + (today.getDate()+(lastDayOfMonth-6)) ).substr(-2);
+        		}
+        	}else{
+        		sdate = today.getFullYear()+'-'+('0'+( parseInt(today.getMonth())+1 )).substr(-2)+'-'+('0' + today.getDate() ).substr(-2);
+        	}
+                edate = today.getFullYear()+'-'+('0'+( parseInt(today.getMonth())+1 )).substr(-2)+'-'+('0' + today.getDate() ).substr(-2);
+                  
+        }
+ 		$( "#datepicker_start" ).val(sdate).datepicker({
+                    dateFormat: 'yy-mm-dd',
+                    defaultDate: sdate,
+                    setDate: sdate,
+                });
+        $( "#datepicker_end" ).val(edate).datepicker({
+                    dateFormat: 'yy-mm-dd',
+                    defaultDate: edate,
+                    setDate: edate,
+                    onSelect: function(dateText) {
+                        window.location = '?'+$('#datepicker_start').val()+"~"+dateText+"";
+                    }
+        });  
+
+ }]);
+
+ jQuery(document).ready(function() {
+
+        $('#tabs').tabs();
+        $('a[href=\''+location.hash+'\']').trigger('click');
+    });
+</script>
+
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="">
+
+
+                 <a href="{% url 'lab_main' %}" class="right-button btn btn-default btn-sm"> back to Main </a>
+
+	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" />{{title}}
+          
+	</div>  
+
+	  
+	<div class="search"> 
+
+<!-- 	     <div class="right-button">
+			<input type="text" ng-model="searchw"> <button > Search </button>
+		</div> -->
+	</div>
+    <div class="clearfix"></div>
+     <div class="tabs" id="tabs">
+        <div class="date_search" style="float: right;">
+             <div style="display: inline-block;"> Start Date: <input type="text" id="datepicker_start"> </div>
+            <div style="display: inline-block;"> End Date: <input type="text" id="datepicker_end"> </div>
+          </div>
+        <ul>
+            <li><a href="#Quantification" class="quantification" > Quantification </a></li>
+            <li><a href="#Fluidigm" class="fluidigm" > Fluidigm  </a></li>
+             <li><a href="#Sanger" class="sanger" > Sanger Confirmation </a></li>
+        </ul>
+
+
+        <div class=" tab" id="Quantification"> 
+
+            <div>
+
+                <a href="{% url 'quantification' %}" class="right-button btn btn-default btn-sm"> New Quantification </a>
+            </div>
+        	<table class="table table-bordered table-striped table-hover">
+        		<tr>
+
+                    <th> name </th>
+        			<th> start  </th>
+        			<th> updated  </th>
+                    
+        			<th> status </th>
+        			
+        			<th> </th>
+
+        		</tr>
+                {% for w in labworkflows %}
+                    {% if w.type == 'Q' %}
+                    <tr class="wf">
+
+                        <td>{{w.name}}</td>
+                        <td>{{ w.created_date }}</td>
+                        <td>{{ w.updated_date }}</td>
+                        <td>{{ w.get_status_display }}</td>
+                        
+                        <td> <a href="/lab/Details/{{ w.id }}" >
+                        <button type="button" class="btn btn-secondary "> Details / Upload </button>   </a></td>
+                     </tr>
+                    {% endif %}
+                {% endfor %}
+        	</table>
+        </div>
+
+       <div class=" tab" id="Fluidigm"> 
+            <div >
+                <a href="{% url 'fluidigm' %}" class="right-button btn btn-default btn-sm"> New Fluidigm </a>
+            </div>
+            <table class="table table-bordered table-striped table-hover">
+                <tr>
+                    <th> name </th>
+                    <th> start  </th>
+                    <th> updated  </th>
+                    
+                    <th> status </th>
+                    <th> </th>
+
+                </tr>
+                {% for w in labworkflows %}
+                    {% if w.type == 'F' %}
+                    <tr class="wf">
+
+                        <td>{{w.name}}</td>
+                        <td>{{ w.created_date }}</td>
+                        <td>{{ w.updated_date }}</td>
+                        <td>{{ w.get_status_display }}</td>
+                        
+                        <td> <a href="/lab/Details/{{ w.id }}" >
+                        <button type="button" class="btn btn-secondary "> Details </button>   </a></td>
+                     </tr>
+                    {% endif %}
+                {% endfor %}
+            </table>
+        </div>
+
+       <div class="tab" id="Sanger"> 
+            <div>
+                <a href="{% url 'quantification' %}" class=" right-button btn btn-default btn-sm"> new sanger Confirmation </a>
+            </div>
+            <table class="table table-bordered table-striped table-hover">
+                <tr>
+                    <th> name </th>
+                    <th> start  </th>
+                    <th> updated  </th>
+                    
+                    <th> status </th>
+                    <th> </th>
+
+                </tr>
+                {% for w in labworkflows %}
+                    {% if w.type == 'S' %}
+                    <tr class="wf">
+                        <td>{{w.name}}</td>
+                        <td>{{ w.created_date }}</td>
+                        <td>{{ w.updated_date }}</td>
+                        <td>{{ w.get_status_display }}</td>
+                        
+                        <td> <a href="/lab/sanger/{{ w.id }}" >
+                        <button type="button" class="btn btn-secondary "> Details </button>   </a></td>
+                     </tr>
+                    {% endif %}
+                {% endfor %}
+            </table>
+        </div>
+
+    </div>
+</div>
+
+</div>
+
+{% endblock %}

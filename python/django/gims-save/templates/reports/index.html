@@ -3,14 +3,14 @@
 
 <style type="text/css">
 .gridStyle {
-    height: 500px;
+    height: 600px;
     width: 1100px;
 }
 
 </style>
 
 <script type="text/javascript">
-	  gimpdevApp.controller('trackerController', ['$scope', '$filter', function($scope, $filter) {
+	  gimsApp.controller('reportController', ['$scope', '$filter', function($scope, $filter) {
                 {% autoescape off %}
                          $scope.fieldsList=[];
                          $scope.userlog = JSON.parse('{{ userlog }}');
@@ -24,8 +24,45 @@
                                 // $scope.loomlog[i].fields.id = $scope.loomlog[i].pk;
                                 $scope.loomList.push($scope.loomlog[i].fields);
                          }
+                 $scope.order_by_type_arr =[];
+                 $scope.order_by_status_arr =[];
+                  $scope.order_by_facility_arr =[];
+                function getObjectIndex(label, arr){
+                    for(var i=0;i<arr.length;i++){
+                        if(arr[i].label == label){
+                            return i;
+                        }
+                    }
+                    return -1
+                 }
+                 var colorArray = [ "#FF9900","#3366CC","#DC3912","#109618","#990099","#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"];
+                 var temp = -1;
+                 {% for o in orders %}
+
+                    temp = getObjectIndex('{{o.type}}', $scope.order_by_type_arr);
+                    if(  temp != -1 ){
+                        $scope.order_by_type_arr[temp].value = $scope.order_by_type_arr[temp].value + 1
+                    }else{
+                        $scope.order_by_type_arr.push({label: '{{o.type}}', value: 1, color:colorArray[$scope.order_by_type_arr.length]});
+                    }
+                    temp = getObjectIndex("{{o.facility}}", $scope.order_by_facility_arr);
+                    if(  temp != -1 ){
+                        $scope.order_by_facility_arr[temp].value = $scope.order_by_facility_arr[temp].value + 1
+                    }else{
+                        $scope.order_by_facility_arr.push({label: "{{o.facility}}", value: 1, color:colorArray[$scope.order_by_facility_arr.length+1]});
+                    }
+                    temp = getObjectIndex('{{o.status}}', $scope.order_by_status_arr);
+                    if(  temp != -1 ){
+                        $scope.order_by_status_arr[temp].value = $scope.order_by_status_arr[temp].value + 1
+                    }else{
+                        $scope.order_by_status_arr.push({label: '{{o.status}}', value: 1, color:colorArray[$scope.order_by_status_arr.length]});
+                    }
+                 {% endfor %}
+
+
+
  if(window.location.hostname =='gims-dev.shc.org'){
-                 console.log('userlog', $scope.userlog, 'loomlog', $scope.loomlog);
+                 console.log('userlog', $scope.userlog, 'order_by_type_arr', $scope.order_by_type_arr, 'order_by_status_arr', $scope.order_by_status_arr);
  }                        
                  {% endautoescape %}
                      $scope.onRowClick= function(entity){
@@ -76,22 +113,13 @@
  jQuery(document).ready(function() {
 
         $('#tabs').tabs();
-        draw_order_completion();
+        // draw_order_completion();
     });
 </script>
 <style type="text/css">
-    .list {
-        position: absolute;
-        left:10000px;
-        height: 500px;
 
-    }
-    .list#userlog-grid{
-        left: 30px;
-        top:100px;
-    }
-    .dummy{
-           height: 500px;
+    .tab{
+          min-height: 700px;
     }
     .report{
         width: 1200px;
@@ -105,29 +133,88 @@
         margin: 20px 200px;
     }
 </style>
-<div ng-controller="trackerController" class="report">
+<div ng-controller="reportController" class="report">
     <div class="tabs" id="tabs">
         <ul>
             <li><a href="#accesslog" class="userlog" ng-click="currentTab('userlog')"> Access Log </a></li>
             <li><a href="#loomlog" class="loomlog" ng-click="currentTab('loomlog')"> Analysis Log  </a></li>
-           <li><a href="#status" class="status" ng-click="currentTab('status')"> Status </a> </li>
-            <li><a href="#order_completion" class="order_completion" ng-click="currentTab('order_completion')"> Order Completion </a> </li>
-             <li><a href="#order_by_type" class="order_by_type" ng-click="currentTab('order_by_type')"> Order By Type </a> </li>
+            <li><a href="#status" class="status" ng-click="currentTab('status')"> Status </a> </li>
+             <li>
+                <a href="#order_by_type" class="order_by_type" ng-click="currentTab('order_by_type')"> Order By Type / Facility</a> </li>
+             <li>
+                <a href="#processing_time_by_step" class="processing_time" ng-click="currentTab('processing_time_by_step')">Average Processing Time By Order Step</a>
+             </li>
+ <!--           <li><a href="#order_completion" class="order_completion" ng-click="currentTab('order_completion')"> Order Completion </a> </li>
+            
              <li><a href="#processing_time_by_ordertype" class="processing_time" ng-click="currentTab('processing_time_by_ordertype')">Processing Time By Ordertype</a></li>
              <li><a href="#processing_time_by_step" class="processing_time" ng-click="currentTab('processing_time_by_step')">Processing Time By Step</a></li>             
-              <li><a href="#completion_rate" class="completion_rate" ng-click="currentTab('completion_rate')">Completion Rate </a></li>
+              <li><a href="#completion_rate" class="completion_rate" ng-click="currentTab('completion_rate')">Completion Rate </a></li> -->
         </ul>   
         <div class="tab" id="accesslog"> 
-            <div class="sub-title">  Access Logs </div>
-            <div class="dummy"></div>
+            <div class="gridStyle" ui-grid="gridOptions "></div>
         </div>
         <div class="tab" id="loomlog"> 
-            <div class="sub-title">  Analysis Request Logs </div>
-            <div class="dummy"></div>
+             <div class="gridStyle" ui-grid="loomOptions " ></div>
         </div>
         <div class="tab" id="status">
-         {% include "com/com_status.html" %}
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th></th><th> Status </th><th> Cases </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="o in order_by_status_arr">
+                        <td></td><td>{$ o.label $}</td><td>{$ o.value $}</td>
+                    </tr>
+                </tbody>
+            </table>
          </div>
+        <div class="tab" id="order_by_type">
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th></th><th> Order Types </th><th> Cases </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="o in order_by_type_arr">
+                        <td></td><td>{$ o.label $}</td><td>{$ o.value $}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th></th><th> Facilities </th><th> Cases </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="o in order_by_facility_arr">
+                        <td></td><td>{$ o.label $}</td><td>{$ o.value $}</td>
+                    </tr>
+                </tbody>
+            </table>
+         </div>
+        <div class="tab" id="processing_time_by_step">
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th></th><th> Step </th><th> Average processing times ( in seconds ) </th> <th> days and times </th> <th> processed cases </th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    {% for key, value in processing_time%}
+                    <tr >
+                        <td></td><td>{{ key }}[{{ value.prev_status }} => {{ value.update_status }}]</td><td>{{ value.a_time }}</td><td>{{ value.a_time_str }}</td> <td>{{value.count}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+         </div>
+{% comment %}         
+  <!--       
         <div class="tab" id="order_completion">
                    <div id="panel-main">
             {% include "com/order_completion.html" %}
@@ -146,17 +233,13 @@
          </div>         
          <div class="tab" id="completion_rate">
           {% include "com/completion_rate.html" %}
-         </div>        
+         </div>   -->
+{% endcomment %}      
     </div>
 
   
 
-    <div class="list" id="userlog-grid">
-        <div class="gridStyle" ui-grid="gridOptions "></div>
-    </div>
-    <div class="list" id="loomlog-grid">
-        <div class="gridStyle" ui-grid="loomOptions " ></div>
-    </div>
+
 
 </div>
 {% endblock content %}

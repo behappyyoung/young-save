@@ -9,6 +9,9 @@
 		width: 150px;
 		margin: 10px 20px;
 	}
+	form label[for='id_note']{
+		display: block;
+	}
 	form input, form select, form .button {
 		width: 350px;
 	}
@@ -17,7 +20,7 @@
 		margin: 20px auto;
 	}
 	form textarea{
-		margin-top: 20px;
+		margin-left: 150px;
 		width: 80%;
 		height: 100px;
 	}
@@ -48,8 +51,9 @@
                 {% csrf_token %}
                 {{ form }}
                 <div class="action">
-                	 <button class="button btn  btn-default" onclick="window.close();"> Cancel </button>
-                	<input type="submit" value="  Save " class="button btn btn-primary" /> 
+               		 <input type="submit" value="  Save " class="button btn btn-primary" /> 
+                	  <a href="/patient/{{pid}}/" class="button btn  btn-default" > Cancel </a> 
+                	
                 </div>
             </form>
 </div> 
@@ -63,7 +67,7 @@
 			<th> date </th>
 			<th> Order Name</th>
 			<th> category</th>
-			<th> recipients</th>
+			<!-- <th> recipients</th> -->
 			<th> Note </th>
 		</thead>
 		<tbody>
@@ -74,7 +78,7 @@
 				<td class="order_name"> {{note.order|cut:"None"}}</td>
 				<td> {{note.category.category_name}}</td>
 
-				<td> {{note.recipients|cut:"None"}}</td>
+				<!-- <td> {{note.recipients|cut:"None"}}</td> -->
 				<td> {{note.note}}</td>
 			</tr>
 			{% endfor %}

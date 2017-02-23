@@ -1,0 +1,563 @@
+d{% extends "tracker/tracker_base.html" %}
+{% block content %}
+{% load staticfiles %}
+ <link rel="stylesheet" href="{% static 'CSS/lightbox.min.css' %}">
+ <script src="{% static 'JS/jquery.fileupload.js' %}"></script>
+  <script src="{% static 'JS/lightbox.min.js' %}"></script>
+<style type="text/css">
+.gridStyle {
+    height: 600px;
+}
+.relation-tree{
+    display: none;
+}
+.flex {
+    display: flex;
+}
+#pedigree_image_dialog {
+    margin: 10px auto;
+    width: 200px;
+    height: 200px;
+    background-image: url('/static/IMAGES/no-entry');
+    background-size: cover;
+}
+#pedigree_image embed{
+    height: 250px;
+}
+.fileupload{
+    margin: 30px auto;
+    text-align: center;
+}
+.ui-dialog .ui-dialog-content{
+    width: 650px ;
+    height: 670px ;
+}
+.order table, .sample table{
+    background-color: #eee;
+}
+.popup, .notes{
+    position: fixed;
+    width: 95%;
+    left: 50px;
+    /*max-height: 800px;*/
+    overflow: auto;
+    background-color: #ccc;
+    border-radius: 10px;
+    display: none;
+    z-index: 50;
+
+}
+.popup table{
+    margin:30px auto;
+    background-color: rgba(181, 188, 214, 0.6);
+    width: 95%;
+}
+#popup td{
+    padding:5px;
+}
+.popup table td.date, .popup table td.order_name{
+    width: 150px;
+}
+.popup table td.action{
+    width: 100px;
+}
+.popup table td.order_name{
+    font-weight: bolder;
+}
+.familylist.new{
+        border-top: solid 2px #909090;
+}
+.tabs{
+    background-color: transparent;
+}
+
+.tabs a{
+    color: #337ab7;
+    cursor: pointer;
+}
+</style>
+<script type="text/javascript">
+
+
+    gimsApp.controller('trackerController', ['$scope', function($scope) {
+                {% autoescape off %}
+
+                 {% endautoescape %}
+
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+
+ {% endif %}                 
+                    
+
+
+    }]);
+
+$(function () {
+    'use strict';
+    // Change this to the location of your server-side upload handler:
+           var uploadUrl = "/mybackend/save_pedigree/";
+            $('#fileupload').fileupload({
+                url: uploadUrl,
+                dataType: 'json',
+                formData: {pid: '{{patient.pid}}', id:'{{patient.id}}'},
+                done: function (e, data) {
+                     location.reload();
+                },
+                progressall: function (e, data) {
+                    var progress = parseInt(data.loaded / data.total * 100, 10);
+                    $('#progress .progress-bar').css(
+                        'width',
+                        progress + '%'
+                    );
+                }
+            }).prop('disabled', !$.support.fileInput)
+                .parent().addClass($.support.fileInput ? undefined : 'disabled');
+
+
+
+    $('#btn-notes').on('click', function () {
+        $.ajax({
+            url:'/mybackend/get_notes/',
+            type:'json',
+            method:'POST',
+            data:{'pid': '{{patient.pid}}'},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> Order Name</th><th> date </th><th> category </th><th> Note </th><th> Author </th></thead><tbody>';
+                var urgent='';
+                var recipients;
+                var writer;
+                var order_name;
+                for(var i=0; i<json_data.length; i++){
+                    urgent = (json_data[i].category.trim() == 'Urgent Matter')? 'danger' : '';
+                    // recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null)? '' : json_data[i].recipients;
+                    writer = (typeof json_data[i].writer ==='undefined' || json_data[i].writer === null )? '' : json_data[i].writer;
+                     order_name = (typeof json_data[i].order_name ==='undefined' || json_data[i].order_name === null )? ' -- ' : json_data[i].order_name;
+                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="order_name">'+order_name+'</td><td class="date">'+json_data[i].update_time+
+                    '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+writer+'</td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+                $('.note-detail').on('click', function() {
+                    console.log('this note', this.id);
+                    // body...
+                })
+            }
+         });
+    });
+    $('.btn-order-note').on('click', function () {
+        var oid = this.id;
+        console.log(oid);
+        $.ajax({
+            url:'/mybackend/get_notes/',
+            type:'json',
+            method:'POST',
+            data:{'oid': oid},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<div  class="sub-title"> Notes for '+json_data[0].order_name+' </div><table class="table table-bordered table-striped table-hover"><thead><th> date </th><th> category </th><th> Note </th><th> By </th> <th> </th></thead><tbody>';
+                var urgent='';
+                var recipients;
+                var writer;
+                for(var i=0; i<json_data.length; i++){
+                    urgent = (json_data[i].category.trim() == 'Urgent Matter')? 'danger' : '';
+                    // recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null)? '' : json_data[i].recipients;
+                    writer = (typeof json_data[i].writer ==='undefined' || json_data[i].writer === null )? '' : json_data[i].writer;
+                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="date">'+json_data[i].update_time+
+                    '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+writer+'</td><td class="action"><a href="/order/'+oid+'/notes/" target="_new" >Add Notes</a></td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+                $('.note-detail').on('click', function() {
+                    console.log('this note', this.id);
+                    // body...
+                })
+            }
+         });
+    });
+
+    $('#btn-history').on('click', function () {
+        // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
+        $.ajax({
+            url:'/mybackend/get_log/patient/',
+            type:'json',
+            method:'POST',
+            data:{'oid': '{{ patient.pid }}'},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> update  </th><th> action</th><th> By </th></thead><tbody>';
+                for(var i=0; i<json_data.length; i++){
+                    hHtml += '<tr><td class="date">'+json_data[i].fields.update_time+
+                    '</td><td>'+json_data[i].fields.action+'</td><td>'+json_data[i].fields.user_id+'</td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+
+            }
+         });
+    });
+
+   $(".popup").draggable();
+   $('.tabs').tabs();
+    $('a[href=\''+location.hash+'\']').trigger('click');
+
+});
+
+   function show_tree(){
+        if($('#show_relation_tree').html().trim() == 'Show Tree'){
+            $('.relation-tree').css('display', 'block');
+            $('#show_relation_tree').html('Hide Tree');    
+        }else{
+            $('.relation-tree').css('display', 'none');
+            $('#show_relation_tree').html('Show Tree');
+        }
+        
+   }
+var family=[];
+var proband={'mrn': '{{patient.pid}}'};
+
+ {% for f in relative %}
+        family.push({relative:'{{ f.relative }}', relationship: '{{ f.relationship }}', ethnicity: '{{ f.ethnicity }}', mrn: '{{ f.mrn }}'});
+ {% endfor %}
+{% include "com/js_relation_tree.js" %}
+
+function delete_file(fid) {
+    if(confirm('are you sure to delete?')){
+        $.ajax({
+            url:'/mybackend/magic_function/delete_patient_file/',
+            type:'json',
+            method:'POST',
+            data:{fid: fid},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                if(data=='Done'){
+                    location.reload();
+                }
+            }
+            });
+    }
+ };
+
+</script>
+
+<div ng-controller="trackerController" class="tracker patients details">
+
+    <div class="sub-title"> Patient: {{ patient.first_name }} {{ patient.middle_name|default_if_none:' ' }} {{ patient.last_name }} [ {{ patient.pid }} ]
+        
+             <a href="/patient/{{patient.pid}}/Notes/" target="_new"  ><button class="btn btn-primary btn-sm right-button "> Add Notes </button> </a>
+                 <button class="btn btn-primary btn-sm right-button "  id="btn-notes">Notes </button> 
+                  <button class="btn btn-primary btn-sm  right-button" id="btn-history"> Update History </button> 
+        
+      <a href="/patient/{{patient.pid}}/Edit/"><button class="btn btn-primary btn-sm  right-button"> Update Patient Info </button> </a> 
+
+     </div>
+
+    <div class="popup">
+        <button class="close" onclick="$('.popup').css('display', 'none');">X</button>
+        <div id="popup"> </div> 
+    </div>
+
+    <div class="details-top">
+        <div class="main-left text-center">
+            <div> <div class="label"> MRN # </div> <div class="value">{{ patient.mrn }}</div></div>
+             <div> <div class="label"> Gender   </div> <div class="value">{{ patient.sex }}</div> </div>
+            <div> <div class="label"> Birth Date  </div> <div class="value">{{ patient.dob|default_if_none:'  / /  ' }}</div> </div>
+            <div> <div class="label"> Ethnicity   </div> <div class="value">{{ patient.ethnicity }}</div> </div>
+
+        </div>
+        <div class="main-right text-center">
+
+            
+            <div> <div class="label"> Phone Number </div> <div class="value">{{ patient.phone|default_if_none:'  -   -    ' }} </div></div>
+             <div> <div class="label"> Work Phone Number </div> <div class="value">{{ patient.work_phone|default_if_none:'  -   -    ' }} </div></div>
+            <div> <div class="label"> Address </div> <div class="value">{{ patient.address|default_if_none:' - ' }}</div></div>
+            {% if patient.address|length < 20 %}
+            <div> <div class="label"> </div> <div class="value"> - </div></div>
+            {% endif %}
+           
+        </div>
+    </div>
+     <div class=" details-bottom">
+ 
+                         <div>
+                         <div class="label"> Memo </div>
+                        <div class="value"> {{patient.memo|default_if_none:' - ' }} </div>
+                        </div>
+  </div>
+       <div class="tabs" id="f_tabs">
+            <ul>
+                <!-- <li><a href="#relationship" class="relationship" > Patient Relationships  </a></li> -->
+                <li><a href="#group" class="group" >  Family Groups  </a></li>
+                <li><a href="#pedigree" class="pedigree" >  Pedigree  </a></li>
+                <li><a href="#orders" class="orders" >Related Orders </a></li>
+                <li><a href="#samples" class="samples" >   Related Samples </a></li>
+                <li><a href="#files" class="files" >   Attachments </a></li>
+            </ul>
+
+           <!-- 
+            <div class=" tab" id="relationship" >
+                                <div  class="sub-sub-title"> 
+                        <a href="/patient/{{patient.pid}}/relationship/"><button class="btn btn-primary btn-sm  right-button"> Add Relative </button> </a> 
+                     </div>
+                     <table class="table table-bordered table-striped table-hover">
+                            <tr>
+
+                                <th> Patient ID </th>
+                                <th>  Relationship </th>
+
+                                <th> MRN </th>
+
+
+
+                            </tr>
+
+                            {% for r in relative %}
+
+                            <tr class="samplelist">
+
+
+                                 <td><a href="/patient/{{ r.relative }}/"> {{ r.relative }} </a></td>
+                                 <td>
+                                    <a href="/patient/{{patient.pid}}/relationship/?main={{patient.pid}}&relative={{ r.relative }}&relationship={{ r.relationship.id }}"> {{ r.relationship }} </a> 
+                                </td>
+
+                                <td>{{ r.mrn }}</td>
+
+                            </tr>
+                            {% endfor %}
+
+                        </table>
+                        <div> <button class="button btn-sm btn-default" onclick="show_tree();" id="show_relation_tree"> Show Tree </button>
+                        </div>
+                           {% include "com/html_relation_tree.html" %}
+
+            </div>
+            -->
+             <div class="tab" id="group">
+                <div  class="sub-sub-title">
+                    <a href="/families/New/" target="_new"><button class="btn btn-primary btn-sm  right-button"> New Family Group </button> </a> 
+                 </div>
+                 <table class="table table-bordered table-striped table-hover">
+                        <tr>
+
+                            <th>  Family ID </th>
+                            <th> Patient ID </th>
+                            <th> MRN </th>
+                            <th> Role</th>
+                            <th> Affected </th>
+                            <th> Gender </th>
+                            <th> Name </th>
+                            <th> Date Of Birth </th>
+                        </tr>
+
+                        {% for f in family %}
+                                
+                               
+                        <tr class="familylist {% ifchanged f.family_id %} new {% endifchanged %}">
+                        <td>{% ifchanged f.family_id %}
+                            <a href="/families/?fid={{ f.family_id }}"> {{ f.family_id }} </a> 
+                             <a href="/families/Add/?fid={{ f.family_id }}"><button class="btn btn-primary btn-sm right-button "> Edit Family  </button> </a> 
+                             {% endifchanged %}</td>
+                             <td> <a href="/patient/{{ f.pid }}/">{{ f.pid }}  </a> </td>
+                              <td>{{ f.mrn }}</td>
+                            <td>{{ f.role_name }}</td>
+                            <td>{{ f.status_name }}</td>
+                            <td>{{ f.sex }}</td>
+                            <td>{{ f.first_name }} {{ f.last_name }} </td>
+                            <td>{{ f.dob }} </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </table>
+            </div>
+            <div class="tab" id="pedigree">
+                <div class="flex"> 
+<!--                     <div class="flex-left"> 
+                    <div  class="sub-sub-title">  </div>
+                        <div> <a href="/patient/{{ patient.pid }}/pedigree/"> Show Pedigree Chart </a></div>
+                        <br />  
+                    </div> -->
+                    <div class="flex">
+                        <div id="pedigree_image" class="text-center">  
+                        {% if ped_file %}  
+                            {% if 'pdf' in ped_file.file_name %}
+                              <embed src="{{ ped_file.url }}" type="application/pdf"> </embed> 
+                              <a class="ppdf" href="{% static 'IMAGES/Pedigree/' %}{{ ped_file.url }}"  target="_new" > Open </a>
+                            {% else %}
+                                 <a class="pimage" href="{{ ped_file.url }}" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{{ ped_file.url }}"  width=200 height=200/> </a>
+                            {% endif %}
+                         </div> 
+
+                        <div class="fileupload">
+                              <label for="fileupload" class="btn btn-success fileinput-button" id="label-fileupload"> Update Pedigree Image</label>
+                        {% else %}
+                        </div> 
+                        <div class="fileupload">
+                              <label for="fileupload" class="btn btn-success fileinput-button" id="label-fileupload"> Add Pedigree Image</label>
+                        {% endif %}
+           
+
+                        
+                         <input class="btn btn-success fileinput-button" id="fileupload" type="file" style="visibility: hidden;" name="files" / >
+                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab" id="orders">
+                    
+
+                <table class="table table-bordered table-striped table-hover">
+                    <tr>
+
+                        <th> Order </th>
+                        <th> Order Type </th>
+                        <th> Status </th>
+                        <th> Phenotypes </th>
+                        <!-- <th> Patient ID</th> -->
+
+                    </tr>
+                    {% for o in orders %}
+                    <tr>
+                        <td><a href="/order/{{ o.id }}/">{{ o.order_name }}</a></td>
+                        <td>{{ o.type.type_name }}</td>
+                        <td class="text-center">{{ o.status.status_name }} <br />
+                             <!-- <button class="btn btn-primary btn-sm btn-order-note" id="{{ o.id }}" >Notes </button>  -->
+                        </td>
+                        <td> 
+                         <table class="table table-bordered table-striped table-hover">
+                                <tr> <th> HPO ID </th>
+                                    <th> Name </th>
+                                </tr>
+                                {% for p in phenotypes %}
+
+                                    {% if p.order_id == o.id %}
+                                    <tr class="phenolist">
+
+                                        <td>{{p.acc}}</td>
+                                        <td>{{p.name}}</td>
+
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                                </table>
+
+                        </td>
+                        <!-- <td>{{o.patient_id}}</td> -->
+                    </tr>
+                    {% endfor %}
+
+                </table>
+        </div>
+            <div class="tab" id="samples">
+
+                    <div  class="sub-sub-title"> Related Samples </div>
+                    <table class="table table-bordered table-striped table-hover">
+                        <tr>
+
+                            <th> Sample </th>
+                            <th> status </th>
+                            <th> Collection Date</th>
+                            <th> Source </th>
+
+                            <th> Type </th>
+
+
+                        </tr>
+
+                        {% for s in so %}
+                        <tr class="samplelist">
+
+                            <td><a href="/sample/{{ s.sample_id }}/">{{ s.sample.asn }}</a></td>
+                             <td>{{ s.sample.status }}</td>
+                             <td>{{ s.sample.collection_date }}</td>
+                            <td>{{ s.sample.source }}</td>
+             
+                            <td>{{ s.sample.type }}</td>
+
+                        </tr>
+                        {% endfor %}
+
+                    </table>
+                </div>
+            <div class="tab" id="files"> 
+
+             <table class="table table-bordered table-striped table-hover">
+                        <tr>
+                                <th> File Title </th>
+                            <th> File Name </th>
+                            <th> type</th>
+                            <th> location </th>
+                            <th> </th>
+
+                        </tr>
+
+                        {% for f in p_files %}
+
+                        <tr class="samplelist">
+                            <td>
+                                    {% if f.url %} 
+                                    <a href="{{ f.url }}" target="_new"> 
+                                        {{ f.file_title }} 
+                                    </a>
+                                    {% else %}
+                                        {{ f.file_title }}
+                                    {% endif %}
+                            </td>
+                             <td>{{ f.file_name }} </td>
+                             <td> {{ f.type }} </td>
+                             <td>{{ f.location }}</td>
+                             <td>
+                                <a id="go-edit-patientfile" href="/patient/{{patient.pid }}/Files/Edit/?fid={{f.id}}"> 
+                                <button id="edit-file" class="button btn-sm btn-default" > Edit </button> </a>
+                                <button id="delete-file" class="button btn-sm btn-default" onclick="delete_file('{{ f.id }}')"> Delete </button>  
+                             </td>
+
+
+                        </tr>
+                        {% endfor %}
+
+                </table>
+
+                <div> <a href="/patient/{{ patient.pid }}/Files/Add/" ><button class="button btn btn-primary right-button"> Add New File </button> </a></div>
+                <br />  
+            </div>
+        </div>
+    
+</div>
+{% endblock content %}

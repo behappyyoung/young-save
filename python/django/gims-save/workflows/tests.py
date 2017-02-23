@@ -1,3 +1,7 @@
 from django.test import TestCase
 
-# Create your tests here.
+
+class WorkflowsTest(TestCase):
+    def test_workflows(self):
+        print('\n workflows testing:')
+        pass

@@ -4,6 +4,7 @@
 <html ng-app="myApp">
 <head>
     <meta charset="utf-8">
+    <meta name="robots" content="noindex,nofollow"/>
     <title> GIMS - {{title}} </title>
     <link rel="shortcut icon" href="/static/IMAGES/favicon.ico" type="image/x-icon" />
     <meta name="description" content="" >
@@ -20,7 +21,7 @@
     <script src="{% static 'JS/bootstrap.min.js' %}" ></script>
     <script src="{% static 'JS/main.js' %}" ></script>
     <script type="text/javascript">
-           var gimpdevApp = angular.module('myApp',  ['ui.grid'])                           // for use of AngularJs with Django
+           var gimsApp = angular.module('myApp',  ['ui.grid'])                           // for use of AngularJs with Django
                                    .config(function($interpolateProvider) {
                                           $interpolateProvider.startSymbol('{$');
                                           $interpolateProvider.endSymbol('$}');

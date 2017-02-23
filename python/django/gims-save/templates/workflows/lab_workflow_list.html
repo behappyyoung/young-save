@@ -1,0 +1,156 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+
+
+
+<style>
+.samples-list{
+    height: 800px;
+    overflow: auto;
+}
+
+td, th {
+    padding: 5px;
+
+}
+.flag{
+    color:red;
+}
+.s-container{
+    width: 100%;
+    text-align: center;
+}
+.s-container:hover, .s-container.selected{
+    background-color: #337ab7;
+    color:white;
+    font-weight: bold;
+}
+
+</style>
+<script type="text/javascript">
+gimsApp.controller('workflowsController', ['$scope', function($scope) {
+                {% autoescape off %}
+                            $scope.workflows = [];
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+                 console.log('workflows', $scope.workflows);
+ {% endif %}
+
+
+ }]);
+
+ jQuery(document).ready(function() {
+
+});
+function submit_select(sid, cid) {
+     $.ajax({
+            url:'/lab/select_container/',
+            type:'json',
+            method:'POST',
+            data:{'sid': sid, 'cid':cid },
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                console.log(data);
+                // alert(data.status_message);
+                $('#modal-title').html('Submit Message');
+                $('#model-message').html(data.status_message);
+                $('#yes-button').html(' <button type="button" class="btn btn-default" data-dismiss="modal" onclick="window.location.reload();">Close</button>')
+                $('#gimsModal').modal("show");
+                // $('#'+sid+'-'+cid).addClass('selected');
+                window.location.reload();
+            }
+        });
+}
+
+function select_container(sid, asn, cid) {
+    console.log(asn, cid);
+    $('#modal-title').html('Submit Confirm');
+    $('#model-message').html('Are you confirmimg receiving DNA of  "<mark> ' + asn + '</mark> "  with container "<mark> ' + cid + '</mark> " ?');
+    $('#yes-button').html('<button type="button" class="btn btn-default" id="yes-button" onclick="submit_select('+sid+', '+cid+');"> Yes </button>');  
+     $('#gimsModal').modal("show"); 
+}
+</script>
+{% load custom_filter %}
+<div ng-controller="workflowsController" class="workflows">
+
+ <!-- Modal -->
+  <div class="modal fade" id="gimsModal" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="modal-title"> </h4>
+        </div>
+        <div class="modal-body alert-info">
+          <p id="model-message" ></p>
+        </div>
+        <div class="modal-footer">
+            <div id="yes-button" ></div>
+         
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+<div class="">
+
+
+          <div style="width: 100%;">
+
+                <a href="{% url 'lab_main' %}" class="right-button btn btn-default btn-sm"> back to Main </a>
+            </div>
+	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" />{{title}}
+
+	</div>  
+
+
+    <div class="samples-list">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th> Patient Name </th><th>ASN</th>  <th>collection date</th> <th>Container ID</th> <th> type </th> <th>Status  </th> <th> Notes</th> <th> Days</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for so in sample_order %}
+
+                    <tr>
+                        <td> {{so.patient.first_name}} {{so.patient.last_name}}</td>
+                        <td><a href="/sample/{{so.sample.id}}/ "> {{so.sample.asn}} </a> </td> <td> {{so.sample.collection_date}}</td>
+                        <td> 
+                                <div>
+                                     {% for c in container%}
+                                        {% if c.sample_id == so.sample_id %}
+                                             <div class="s-container" id="{{c.sample_id}}-{{c.cid}}" onclick="select_container('{{c.sample_id}}', '{{c.sample.asn}}', '{{c.cid}}');" > {{ c.cid}} </div>
+
+                                        {% endif %}
+                                 {% endfor %}
+
+                                </div>
+                               
+                                
+                        </td>
+                         <td> {{so.order.type}}</td> 
+                        <td> {{so.sample.status}}
+                        </td> <td> {{so.sample.notes}}</td><td class="{% if so.sample.collection_date|is_past_due == 'YES'  %} flag {% endif %}  ">  {{so.sample.collection_date|timesince}} </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+    </div>
+
+
+</div>
+
+{% endblock %}

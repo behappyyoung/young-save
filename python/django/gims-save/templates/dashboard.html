@@ -8,8 +8,97 @@
  <script src="{% static 'JS/moment.js' %}" ></script>
  <script src="{% static 'JS/daterangepicker.js' %}" ></script>
  <script src="{% static 'JS/highcharts.js' %}" ></script>
- <script src="{% static 'JS/dashboard.js' %}" ></script>
+  <script src="{% static 'JS/d3.v4.min.js' %}" ></script>
+  <script src="{% static 'JS/Donut3D.js' %}" ></script>
+ <script src="{% static 'JS/dashboard.js' %}?v=18" ></script>
+<script type="text/javascript">
+     gimsApp.controller('dashController', ['$scope', function($scope) {
+                {% autoescape off %}
+                            // $scope.orders = {{json_orders}};
+                 {% endautoescape %}
+                 $scope.order_by_type_arr =[];
+                 $scope.order_by_status_arr =[];
+                  $scope.order_by_facility_arr =[];
+                   $scope.order_by_status_all_arr =[];
+                 // for(var i=0; i < $scope.orders.length;i++){
+                 //    console.log($scope.orders[i]);
+                 // }
+                 function getObjectIndex(label, arr){
+                    for(var i=0;i<arr.length;i++){
+                        if(arr[i].label == label){
+                            return i;
+                        }
+                    }
+                    return -1
+                 }
+                 var temp = -1;
+                 var colorArray = [ "#FF9900","#3366CC","#DC3912","#109618","#990099","#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"];
+                 {% autoescape off %}
+                 {% for o in orders %}
 
+                    temp = getObjectIndex('{{o.type}}', $scope.order_by_type_arr);
+                    if(  temp != -1 ){
+                        $scope.order_by_type_arr[temp].value = $scope.order_by_type_arr[temp].value + 1
+                    }else{
+                        $scope.order_by_type_arr.push({label: '{{o.type}}', value: 1, color:colorArray[$scope.order_by_type_arr.length]});
+                    }
+                    temp = getObjectIndex("{{o.facility}}", $scope.order_by_facility_arr);
+                    if(  temp != -1 ){
+                        $scope.order_by_facility_arr[temp].value = $scope.order_by_facility_arr[temp].value + 1
+                    }else{
+                        $scope.order_by_facility_arr.push({label: "{{o.facility}}", value: 1, color:colorArray[$scope.order_by_facility_arr.length+1]});
+                    }
+                    temp = getObjectIndex('{{o.status}}', $scope.order_by_status_arr);
+                    if(  temp != -1 ){
+                        $scope.order_by_status_arr[temp].value = $scope.order_by_status_arr[temp].value + 1
+                    }else{
+                        $scope.order_by_status_arr.push({label: '{{o.status}}', value: 1, color:colorArray[$scope.order_by_status_arr.length]});
+                    }
+                 {% endfor %}
+                    {% for o in t_orders %}
+
+                    temp = getObjectIndex('{{o.status}}', $scope.order_by_status_all_arr);
+                    if(  temp != -1 ){
+                        $scope.order_by_status_all_arr[temp].value = $scope.order_by_status_all_arr[temp].value + 1
+                    }else{
+                        $scope.order_by_status_all_arr.push({label: '{{o.status}}', value: 1, color:colorArray[$scope.order_by_status_all_arr.length]});
+                    }
+                 {% endfor %}
+                 {% endautoescape %}
+// console.log('orders', $scope.orders, 'status', $scope.order_by_status_arr);      
+                var donut_order_type_svg = d3.select("div#donut_order_type").append("svg").attr("width",400).attr("height",300);
+                var donut_order_facility_svg = d3.select("div#donut_order_facility").append("svg").attr("width",400).attr("height",300);
+                var donut_order_status_svg = d3.select("div#donut_order_status").append("svg").attr("width",400).attr("height",300);
+                 var donut_order_status_current_svg = d3.select("div#donut_order_status_current").append("svg").attr("width",400).attr("height",300);
+
+                donut_order_type_svg.append("g").attr("id","order_by_type_Donut");
+                donut_order_facility_svg.append("g").attr("id","order_by_facility_Donut");
+                donut_order_status_svg.append("g").attr("id","order_by_status_Donut");
+                donut_order_status_current_svg.append("g").attr("id","order_by_status_current_Donut");
+
+                    $scope.total_value =0;
+                    $scope.order_by_type_arr.map(function(d){ $scope.total_value += d.value;  });
+                    $scope.ngchangeData = function(){
+                        $scope.total_value =0;
+                        $scope.order_by_type_arr.map(function(d){ $scope.total_value += d.value;  });
+
+                        Donut3D.transition("order_by_type_Donut", $scope.order_by_type_arr, 130, 100, 30, 0.4);
+
+                    }
+
+
+                Donut3D.draw3d("order_by_type_Donut", $scope.order_by_type_arr, 150, 150, 130, 100, 30, 0.4);
+                Donut3D.draw3d("order_by_facility_Donut", $scope.order_by_facility_arr, 150, 150, 130, 100, 30, 0.4);
+                Donut3D.draw2d("order_by_status_current_Donut", $scope.order_by_status_all_arr, 150, 150, 110, 110, 30, 0.4);
+                Donut3D.draw3d("order_by_status_Donut", $scope.order_by_status_arr, 150, 150, 130, 100, 30, 0.4);
+
+
+
+
+
+}]);
+
+</script>
 <style>
     .panel.dashboard {
         justify-content: center;
@@ -19,19 +108,21 @@
         flex:1;
         width: 100%;
     }
-    .panel.analysis{
+.panel.analysis{
     background-color: transparent;
     display: flex;
-    margin-top: 0;
+    margin: 0 auto;
+    padding: 0 20px;
 }
-.panel-menu {
-    width: 220px;
+.dashboard .topmenu .panel.panel-menu {
+    width: 260px;
     /*height:150px;*/
-    padding: 20px;
-    border-radius: 10px;
+    padding: 0 0px 20px 0px;
+    margin-bottom: 0;
+    /*border-radius: 10px;*/
     background-color: white;
     text-align: center;
-    border-top: solid 5px blue;
+    /*border-top: solid 5px blue;*/
 }
 .panel-menu button{
     width: 150px;
@@ -42,64 +133,82 @@
     background-image: linear-gradient(to bottom,#fff,#e8e8e8);
     color: black;
 }
+.dashboard .main-dash{
+  margin: 0 auto;
+}
+.search{
+  margin: 10px 20px 0;
+  text-align: right;
+}
 </style>
-
-<div class="panel analysis">
-    <div  class="panel panel-menu">
-        <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-workflows.png" />  Workflows </div>
-        <a href="{% url 'workflows' %}" id="dash-btn-workflows"><button class="btn menu btn-sm "> View Workflows</button> </a> 
-{% if 'Admin' in  request.session.role or 'Manager' in  request.session.role%}            
-         <a href="{% url 'define_workflows' %}"><button class="btn menu btn-sm "> Define Workflows</button> </a> 
-{% endif %}         
-    </div>
-    <div class="panel panel-menu"> <a href="{% url 'samples' %}"> 
-        <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-samples.png" />  Samples </div></a> 
-         <a href="{% url 'samples' %}"><button class="btn menu btn-sm "> View Samples</button> </a> 
-         <a href="{% url 'orders' %}"><button class="btn menu btn-sm "> View Orders</button> </a> 
-    </div>
-    <div class="panel panel-menu"> 
-        <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-analyze.png" /> Analyses </div> 
-         <a href="{% url 'analyses' %}"><button class="btn menu btn-sm "> View Analyses</button> </a> 
-{% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role %}            
-         <a href="{% url 'run_analysis' %}"><button class="btn menu btn-sm "> Run Analysis </button> </a>
-{% endif %}          
-    </div>
-</div>
-
-<div class="panel dashboard">
-    <div class="panel panel-dash" id="dash-status">
-        <span class="glyphicon glyphicon-chevron-down dashhide" data-id="status" aria-hidden="true"> </span>
-        {% include "com/com_status.html" %}
-    </div>
-
-    <div class="panel panel-dash" id="dash-order_completion">
-        <span class="glyphicon glyphicon-chevron-down dashhide" data-id="order_completion" aria-hidden="true"> </span>
-        <div id="panel-main">
-            {% include "com/order_completion.html" %}
+<div ng-controller="dashController" class="dashboard">
+    <div class="panel analysis topmenu">
+        <div  class="panel panel-menu">
+            <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-workflows.png" />  Workflows </div>
+            <a href="{% url 'workflows' %}" id="dash-btn-workflows"><button class="btn menu btn-sm "> View Workflows</button> </a> 
+    {% if 'Admin' in  request.session.role or 'Manager' in  request.session.role%}            
+             <a href="{% url 'lab_main' %}"><button class="btn menu btn-sm "> Lab Workflows</button> </a> 
+    {% endif %}         
+        </div>
+        <div class="panel panel-menu"> <a href="{% url 'samples' %}"> 
+            <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-samples.png" />  Samples </div></a> 
+             <a href="{% url 'samples' %}"><button class="btn menu btn-sm "> View Samples</button> </a> 
+             <a href="{% url 'orders' %}"><button class="btn menu btn-sm "> View Orders</button> </a> 
+        </div>
+        <div class="panel panel-menu"> 
+            <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-analyze.png" /> Analyses </div> 
+             <a href="{% url 'analyses' %}"><button class="btn menu btn-sm "> View Analyses</button> </a> 
+    {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role %}            
+             <a href="{% url 'run_analysis' %}"><button class="btn menu btn-sm "> Run Analysis </button> </a>
+    {% endif %}          
         </div>
     </div>
 
-    <div class="panel panel-dash" id="dash-order_by_type">
-        <span class="glyphicon glyphicon-chevron-down dashhide" data-id="order_by_type" aria-hidden="true"> </span>
-    {% include "com/order_by_type.html" %}
+    <div class="search">        
+        <div class="date_search" >
+             <div style="display: inline-block;"> Start Date: <input type="text" id="datepicker_start"> </div>
+            <div style="display: inline-block;"> End Date: <input type="text" id="datepicker_end"> </div>
+            <div style="display: inline-block;"> <select id="select-period"><option value=""> Select Period </option>  <option value="Total"> Total Period </option> <option value="Month"> Last One Month </option><option value="Year"> Last One Year </option></select> </div>
+          </div>
+            
     </div>
-    <div class="panel panel-dash" id="dash-processing_time_by_ordertype">
-        <span class="glyphicon glyphicon-chevron-down dashhide" data-id="processing_time_by_ordertype" aria-hidden="true"> </span>
-    {% include "com/processing_time_by_ordertype.html" %}
-    </div>
-     <div class="panel panel-dash" id="dash-processing_time_by_step">
-        <span class="glyphicon glyphicon-chevron-down dashhide" data-id="processing_time_by_step" aria-hidden="true"> </span>
-    {% include "com/processing_time_by_step.html" %}
-    </div>
-        <div class="panel panel-dash" id="dash-completion_rate">
-            <span class="glyphicon glyphicon-chevron-down dashhide" data-id="completion_rate" aria-hidden="true"> </span>
-        {% include "com/completion_rate.html" %}
+
+    <div class="panel dashboard main-dash">
+
+
+        <div class="panel panel-dash" id="dash-status">
+            <span class="glyphicon glyphicon-chevron-down dashhide" data-id="status" aria-hidden="true"> </span>
+            {% include "com/com_status.html" %}
         </div>
+
+        <div class="panel panel-dash" id="dash-order_completion">
+            <span class="glyphicon glyphicon-chevron-down dashhide" data-id="order_completion" aria-hidden="true"> </span>
+            <div id="panel-main">
+                {% include "com/order_completion.html" %}
+            </div>
+        </div>
+
+        <div class="panel panel-dash" id="dash-order_by_type">
+            <span class="glyphicon glyphicon-chevron-down dashhide" data-id="order_by_type" aria-hidden="true"> </span>
+        {% include "com/order_by_type.html" %}
+        </div>
+        <div class="panel panel-dash" id="dash-processing_time_by_ordertype">
+            <span class="glyphicon glyphicon-chevron-down dashhide" data-id="processing_time_by_ordertype" aria-hidden="true"> </span>
+        {% include "com/processing_time_by_ordertype.html" %}
+        </div>
+         <div class="panel panel-dash" id="dash-processing_time_by_step">
+            <span class="glyphicon glyphicon-chevron-down dashhide" data-id="processing_time_by_step" aria-hidden="true"> </span>
+        {% include "com/processing_time_by_step.html" %}
+        </div>
+            <div class="panel panel-dash" id="dash-completion_rate">
+                <span class="glyphicon glyphicon-chevron-down dashhide" data-id="completion_rate" aria-hidden="true"> </span>
+            {% include "com/completion_rate.html" %}
+            </div>
+    </div>
+
+
+
 </div>
-
-
-
-
 
 
 

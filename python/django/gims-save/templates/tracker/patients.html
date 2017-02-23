@@ -8,7 +8,7 @@
 
 </style>
 <script type="text/javascript">
-    gimpdevApp.controller('trackerController', ['$scope', '$filter', function($scope, $filter) {
+    gimsApp.controller('trackerController', ['$scope', '$filter', function($scope, $filter) {
         $scope.familyObj = {};
         {% for f in family %}
             if( typeof $scope.familyObj['{{f.patient_id}}'] === 'undefined' ){
@@ -48,18 +48,20 @@
                          excludeProperties: ['id'],
                           columnDefs :[
                              { field: 'pid',cellTemplate:'<div class="ui-grid-cell-contents pointer"> {$ COL_FIELD $}  </div>', displayName: 'Patient ID', width: 150 },
-                             { field: 'last_name',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Last Name', width: 150 },
-                             { field: 'first_name',cellTemplate:'<div class="ui-grid-cell-contents "> {$ row.entity.first_name $} / {$ row.entity.middle_name $}  </div>', displayName: 'First / Middle Name', width: 200 },
-                             { field: 'mrn',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Medical Record Number'},
+                             { field: 'last_name',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Last Name', width: 100 },
+                             { field: 'first_name',cellTemplate:'<div class="ui-grid-cell-contents "> {$ row.entity.first_name $}  </div>', displayName: 'First Name', width: 100 },
+                             { field: 'middle_name',cellTemplate:'<div class="ui-grid-cell-contents ">  {$ row.entity.middle_name $}  </div>', displayName: 'Middle Name', width: 100 },
+                             { field: 'mrn',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'MRN', width: 80},
                              { field: 'sex',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Gender', width: 80 },
-                             { field: 'race',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Ethnicity', width: 150 },
+                             { field: 'ethnicity',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Ethnicity', width: 150 },
                              { field: 'dob',cellTemplate:'<div class="ui-grid-cell-contents "> {$ COL_FIELD $}  </div>', displayName: 'Birth Date', width: 150 },
-                              { field: 'family',cellTemplate:'<div class="ui-grid-cell-contents "> <a href="/families/?fid={$ COL_FIELD $}" >{$ COL_FIELD $} </a> </div>', displayName: 'Family', width: 100 },
+                              { field: 'family',cellTemplate:'<div class="ui-grid-cell-contents "> <a href="/families/?fid={$ COL_FIELD $}" >{$ COL_FIELD $} </a> </div>', displayName: 'Family'},
                              ]
                    };
 
 
     }]);
+
 
 </script>
 
@@ -68,7 +70,11 @@
     <div class="active menu"> samples </div> <div class="menu"> <a href="{% url 'orders' %}"> orders </a> </div>
 </div> -->
 <div class="sub-menu">
-    <div class="sub-title">  Patients </div>
+    <div class="sub-title">  Patients 
+   
+    </div>
+    <div  style="width: 100%;">
+    <a onclick="go_cartagenia()"> <button  class="button right-button" > Access Cartagenia  </button> </a> </div>
 </div>
 <div class="data">
     <div class="list">

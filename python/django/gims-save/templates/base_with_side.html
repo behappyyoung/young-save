@@ -4,12 +4,13 @@
 <html ng-app="myApp">
 <head>
     <meta charset="utf-8">
-    <title> GIMS </title>
+    <meta name="robots" content="noindex,nofollow"/>
+    <title> GIMS - {{title}} </title>
     <meta name="description" content="" >
     <link rel="stylesheet" href="{% static 'CSS/bootstrap.min.css' %}">
-
+    <link rel="stylesheet" href="{% static 'CSS/jquery-ui.css' %}">  
     <link rel="stylesheet" href="{% static 'CSS/ui-grid.css' %}">
-    <link rel="stylesheet" href="{% static 'CSS/main.css' %}">    
+    <link rel="stylesheet" href="{% static 'CSS/main.css' %}?v=0109">    
 
     <script src="{% static 'JS/jquery-2.2.4.min.js' %}" ></script>
     <script src="{% static 'JS/angular.min.js' %}" ></script>
@@ -18,7 +19,7 @@
     <script src="{% static 'JS/bootstrap.min.js' %}" ></script>
     <script src="{% static 'JS/main.js' %}" ></script>
     <script type="text/javascript">
-           var gimpdevApp = angular.module('myApp',  [])                           // for use of AngularJs with Django
+           var gimsApp = angular.module('myApp',  [])                           // for use of AngularJs with Django
                                    .config(function($interpolateProvider) {
                                           $interpolateProvider.startSymbol('{$');
                                           $interpolateProvider.endSymbol('$}');
@@ -113,7 +114,7 @@ $(function () {
 
     </script>
 </head>
-<body >
+<body>
     {% include "common_header.html" %}
     <div class="popup note">
         <button class="close" onclick="$('.popup').css('display', 'none');">X</button>
@@ -150,63 +151,15 @@ $(function () {
 
                     <div class="menu">
                         <ul>
+                        {% for q in quicklinks %}
                         <li>
-                                <a href="{{ most_access.0.url }}">
-                                {% if most_access.0.result != None and most_access.0.result != 'redirect' %}
-                                     {% if  most_access.0.result|length < 25 %}
-                                        {{ most_access.0.result|slice:"0:"  }}
-                                    {% else %}
-                                            {{ most_access.0.result| slice:"0:20" }} ...
-                                    {% endif %}
-                                {% else %}
-                                    {% if  most_access.0.url|length < 25 %}
-                                        {{ most_access.0.url|slice:"1:-1"  }}
-                                    {% else %}
-                                            {{ most_access.0.url| slice:"1:20" }} ...
-                                    {% endif %}
-                                {% endif %}
+                                <a href="{{ q }}">
+                                    {{q}}
 
                                 
                                  </a>
                         </li>
-                        <li> 
-                                 {% if  most_access.0.url != last_access.0.url %}
-                                   <a href="{{ last_access.0.url }}"> 
-                                   {% if last_access.0.result != None and last_access.0.result != 'redirect' and last_access.0.result != ''%}
-                                       {% if  last_access.0.result|length < 25 %}
-                                            {{ last_access.0.result|slice:"0:"  }}
-                                        {% else %}
-                                                {{ last_access.0.result| slice:"0:20" }} ...
-                                        {% endif %}
-                                   {% else %}
-                                        {% if  last_access.0.url|length < 25 %}
-                                                {{ last_access.0.url|slice:"1:-1" }}
-                                        {% else %}
-                                                {{ last_access.0.url| slice:"1:20" }} ...
-                                        {% endif %}
-                                    {% endif %}    
-                                    </a>
-                                {% else %}
-                                    <a href="{{ most_access.1.url }}">                                 
-                                    {% if most_access.1.result != None and most_access.1.result != 'redirect' and most_access.1.result != '' %}
-
-                                         {% if  most_access.1.result|length < 20 %}
-                                            {{ most_access.1.result|slice:"0:-1"  }}
-                                        {% else %}
-                                                {{ most_access.1.result| slice:"0:15" }} ...
-                                        {% endif %}
-                                    {% else %}
-                                        {% if  most_access.1.url|length < 20 %}
-                                                {{ most_access.1.url|slice:"1:-1"  }}
-                                        {% else %}
-                                                {{ most_access.1.url| slice:"1:15" }} ...
-                                        {% endif %}
-                                    {% endif %}
-                                    </a>
-                                {% endif %}
-
-
-                     </li>
+                        {% endfor %}    
                      </ul>
                         
                     </div>
@@ -214,7 +167,7 @@ $(function () {
                 <div class="panel dash-list">
                     <div class="title"> available widget / report </div>
                     <ul>
-                        <li class="listitem show" data-id="status" data-show=true> Queue Status </li>
+                        <li class="listitem show" data-id="status" data-show=true> Current Status </li>
                         <li class="listitem show" data-id="order_completion" data-show=true> order / completion </li>
                         <li class="listitem show" data-id="order_by_type" data-show=true>  order by Type </li>
                         <li class="listitem show" data-id="processing_time_by_ordertype" data-show=true>  processing time by Order Type </li>

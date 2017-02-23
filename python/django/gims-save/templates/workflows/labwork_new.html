@@ -1,0 +1,320 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+
+
+
+<style>
+
+td, th {
+    padding: 5px;
+
+}
+.steps{
+	clear:both;
+}
+
+
+.step2{
+	display: none;
+}
+.samples{
+	height: 600px;
+	overflow: auto;
+}
+#tubes{
+	display: flex;
+	width: 1000px;
+    margin: auto;
+	
+}
+#tubes > div{
+ 	width: 450px;
+ 	margin:auto;
+}
+.tube{
+	display: inline-block;
+	width: 100px;
+}
+.intube{
+	display: inline-block;
+	width: 100px;
+	height: 50px;
+	background-color: white;
+	margin: 1px;
+	vertical-align:top;
+	text-align: center;
+	font-size: 12px;
+	padding-top: 5px;
+    /* background-image: url(/static/IMAGES/icon-beaker.png); */
+    /* background-size: contain; */
+    /* background-repeat: no-repeat; */
+    /* background-position: center; */
+    /* background-blend-mode: luminosity; */
+}
+#dialog{
+	display: none;
+}
+.dialog-input{
+	display: flex;
+	margin: 20px auto;
+	height: 50px;
+}
+.dialog-input input{
+	width: 200px;
+}
+#tube-desc{
+	height: 600px;
+	overflow: auto;
+}
+</style>
+
+
+<script type="text/javascript">
+gimsApp.controller('workflowsController', ['$scope', '$http', function($scope, $http) {
+                {% autoescape off %}
+                            $scope.samples = {{ samples }};
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+                 console.log('samples', $scope.samples);
+ {% endif %}
+ 	$scope.sortType = 'type';
+ 	$scope.chosenSamples = [];
+ 	$scope.chooseSample = function(s){
+ 		
+ 		// var checked =  $('#'+s.asn).prop('checked') ? false : true;
+ 		// console.log(s.asn, $('#'+s.asn).prop('checked'), checked);
+ 		var index = $scope.chosenSamples.indexOf(s);
+ 		if(index > -1){
+ 			$scope.chosenSamples.splice(index, 1);
+ 			$('#'+s.asn).prop('checked', false);
+ 		}else{
+ 			$scope.chosenSamples.push(s);
+ 			$('#'+s.asn).prop('checked', true);
+ 		}
+ 		
+ 		console.log($scope.chosenSamples);
+ 	}
+ 	$scope.current_stage = 1;
+
+ 	$scope.next = function(){
+ 		// $scope.chosenSamples = [];
+ 		$scope.current_stage++;
+ 		// console.log($scope.current_stage);
+		// var checkboxes = $('.checkbox');
+		// for( var i=0; i<checkboxes.length;i++){
+		// 	if(checkboxes[i].checked){
+		// 		$scope.chosenSamples.push(checkboxes[i].id);
+		// 	}
+		// }
+		console.log($scope.chosenSamples);
+		$('.step2').css('display', 'block');
+		$('.step1').css('display', 'none');
+		var cur=0;
+		for(var j=1;j<=4;j++){
+	 		for(var i=1; i<=12; i++){
+	 			if(typeof $scope.chosenSamples[cur] !== 'undefined'){
+		 			$('#intube-'+i).html(i + '<br />' + $scope.chosenSamples[cur].asn);
+		 			cur++;	
+	 			}else{
+	 				break;
+	 			}
+		 	}
+ 		}
+ 		 var tubedetails = ' <table class="table table-stripped text-center"> <tr><th> tube number </th>  <th> asn </th> <th> container # </th>  </tr>';
+
+ 		 for(var i =0; i<$scope.chosenSamples.length;i++){
+ 		 	tubedetails += '<tr> <td> '+ (i+1) + '</td><td> ' + $scope.chosenSamples[i].asn + '</td><td> ' + $scope.chosenSamples[i].container + '</td> </tr>';
+ 		 }
+
+ 		 tubedetails += '</table>';
+ 		 $('#tube-details').html(tubedetails);
+ 		 var today = new Date();
+ 		 $('#print-title').html('LabQ-'+ today.getFullYear() + '-'+ (today.getMonth()+1) +'-'+ today.getDate() +'-#{{new_id}}');
+ 	}
+
+ 	$scope.back = function(){
+ 		$scope.current_stage--;
+ 		$('.step2').css('display', 'none');
+		$('.step1').css('display', 'block');
+ 	}
+
+ 	var tubeHTML='';
+	for(var j=1;j<=4;j++){
+ 		for(var i=1; i<=12; i++){
+	 		tubeHTML += '<div class="intube" id="intube-'+i+'">   </div>';
+	 	}
+	 	$('#tube-'+j).html(tubeHTML);
+	 	tubeHTML = '';
+ 	} 	
+
+
+ 	$scope.save = function(){
+ 		
+ 			$('#dialog-name').val($('#print-title').html());
+ 			$( "#dialog" ).dialog();
+ 	}
+ 	// $scope.saveWork = function(){
+ 	// 	var csvContent = "data:text/csv;charset=utf-8,\ufeff";
+ 	// 	var fdata = $('.intube');
+  //                       var body='';
+  //                       for(var i =0; i< fdata.length; i++){
+  //                             body += $(fdata[i]).html();
+  //                       }
+
+ 	// 	csvContent += '\n' + body;
+ 	// 	data = encodeURI(csvContent);
+  //                       var link = document.createElement('a');
+  //                       link.setAttribute('href', data);
+  //                       link.setAttribute('download',  $('#dialog-name').val() + '.txt');
+  //                       link.click();
+
+ 	// }
+ 	$scope.saveWork = function(andprint=false) {
+ 		var sample_list = [];
+ 		var order_list = []
+ 			for(var i =0; i<$scope.chosenSamples.length;i++){
+ 		 		sample_list.push( (i+1)+'-' + $scope.chosenSamples[i].order_id + '-' + $scope.chosenSamples[i].sample_id + '-' + $scope.chosenSamples[i].container );
+ 		 		order_list.push($scope.chosenSamples[i].order_id);
+ 		 	}
+ 		 var name = $('#print-title').text();
+ 		 var type = '{{title}}'.substring(0, 1);
+ 		$http({
+ 			
+    						headers: {
+   							'Content-Type': 'application/json'
+ 							},
+    						method:'POST', 
+    						url:'/lab/save/'+type+'/', 
+    						data:{
+    							'name': name,
+    							'order_list' : order_list.join(','), 
+						        'sample_list': sample_list.join(',')
+    						}
+    					}).then(function(response){
+    						console.log(response.data);
+    							if(response.data='None'){
+    								// alert('Saved');	
+    								confirm('Saved');
+    								if(andprint){
+    									$scope.Print();
+    								}
+    								window.location.href = '/lab/#{{title}}';
+    							}else{
+    								alert('error - ' + response.data ) ;	
+    							}
+					    		
+					    });
+ 	}
+
+ 	$scope.Print = function(){
+ 		 var divElements = $('.for-print').html();
+ 		 // $scope.saveWork();
+ 		var printWindow = window.open("", "_blank", 'height=590,width=1100');
+                            printWindow.document.open();
+                            printWindow.document.write('<html><head><title>' + $('#dialog-name').val() + '</title><link rel="stylesheet" type="text/css" href="/static/CSS/print.css?v=17"></head><body><div id="printingDiv" class="flex">');
+                            printWindow.document.write(divElements);
+                            printWindow.document.write('</div></body></html>');
+
+                             setTimeout(function() {
+                                 printWindow.print();
+                                 printWindow.close();
+
+                             }, 100);
+ 	}
+}]);
+</script>
+
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="steps">
+
+
+
+	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" /> {{title}} 
+	 <a class="button right-button btn btn-sm" href="/lab/#{{title}}"> Back </a>
+		<div class="sub-sub-title"> 
+			 <span class="step1"> <img class="icon" src="/static/IMAGES/icon-beakers.png" />	 Choose Samples </span>
+			  <span class="step2"> <img class="icon" src="/static/IMAGES/icon-beakers.png" />	 review </span>
+		</div>
+        
+
+	</div>  
+
+		<div class="samples step1">
+			<div class="search right-button"> <input type="text" ng-model="searchs"> <button > Search </button></div>
+					<table class="table table-striped table-bordered table-hover table-hove-info ">
+						<tr>
+							<th></th>
+							<th> sample name </th>
+							<th> sample asn </th>
+							<th> 
+								<a href="#" ng-click="sortType = 'type'; sortReverse = !sortReverse"> Type 
+						        <span ng-show="sortType == 'type' && !sortReverse" class="fa fa-caret-down"></span>
+						        <span ng-show="sortType == 'type' && sortReverse" class="fa fa-caret-up"></span> </a> 
+	       					</th>
+							<th> order name</th>
+							<th> order status </th>
+							<th> <a href="#" ng-click="sortType = 'status'; sortReverse = !sortReverse"> lab status 
+						        <span ng-show="sortType == 'status' && !sortReverse" class="fa fa-caret-down"></span>
+						        <span ng-show="sortType == 'status' && sortReverse" class="fa fa-caret-up"></span> </a> 
+						    </th>
+							
+						</tr>
+						<tr ng-repeat="s in samples | filter:searchs | orderBy:sortType:sortReverse " id='{$ s.sample_id + "_" +s.order_id $}' class="sample"> 
+							<th> <input type="checkbox" name="{$ s.asn $}" id="{$ s.asn $}" class="checkbox" ng-click="chooseSample(s);"/></th>
+							<td>{$ s.name $}</td>
+							<td>{$ s.asn $}					</td>
+							<td>	{$ s.type$}					</td>
+							<td>	{$ s.order_name $}					</td>
+							<td> 	{$ s.status_name $}</td>
+							<td> 	{$ s.lab_status $}</td>
+						</tr>
+					</table> 
+					<button class="right-button btn btn-primary btn-sm" ng-click="next()"> Next </button> 
+		</div>			
+
+	 	<div class="tubes step2">
+	 		<div id="tubes"  class="for-print flex" >
+	 			<div id="left-tubes" class="flex-left">
+	 				<div class="tube" id="tube-1"> </div>
+	 				<div class="tube" id="tube-2"> </div>
+	 				<div class="tube" id="tube-3"> </div>
+	 				<div class="tube" id="tube-4"> </div>
+	 			</div>
+<!-- 	 			<div id="right-tubes">
+	 				<div class="tube" id="tube-5"> </div>
+	 				<div class="tube" id="tube-6"> </div>
+	 				<div class="tube" id="tube-7"> </div>
+	 				<div class="tube" id="tube-8"> </div>
+	 			</div> -->
+		 		<div id="tube-desc" class="flex-right">
+		 			<div class="sub-sub-title" id="print-title"> </div>
+		 			<div id="tube-details">
+		 				
+		 			</div>
+		 		</div>
+	 		</div>
+
+			<button class="btn btn-primary btn-sm" ng-click="back()"> Back </a> 
+			<button class="right-button btn btn-primary btn-sm" ng-click="saveWork(true)"> Save & Print </button> 
+			<button class="right-button btn btn-primary btn-sm" ng-click="saveWork()"> Save </button> 
+
+	 	</div>
+
+
+	 	<div id="dialog" title="Save current workflow">
+	 		<div class="dialog-input"> 
+	 		<input id="dialog-name" type="name" name="name" placeholder="workflow name" />
+	 		
+	 		 </div>
+	 	</div>
+
+
+
+
+</div>
+
+</div>
+
+{% endblock %}

@@ -1,6 +1,25 @@
 {% load staticfiles %}
-
-
+<style>
+.lab_sub { 
+    display: none;
+    left: 150px;
+    position: absolute;
+    top: 100px;
+    list-style: none;
+ }
+.dropdown-menu li a:hover{
+    background-color: #337ab7;
+}
+</style>
+<script type="text/javascript">
+$(document).ready(function () {
+    $('.header-btn-lab-workflows').mouseover( function(e) {
+        $('.lab_sub').css('display', 'block');
+    }).mouseout( function(e) {
+        $('.lab_sub').css('display', 'none');
+    });     
+});
+</script>
 <div class=" main-header">
     <div class="logo-section">
         <div class="logo"><img src="{% static 'IMAGES/shc_logo_V2.png' %}" /> </div>
@@ -21,12 +40,21 @@
                          <li class="dropdown" id="dropdown-li-main">
                              <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="dropdown-toggle-mainmenu">  Menu <span class="caret"></span> </a>
                              <ul class="dropdown-menu" >
+  {% if 'Admin'  in  request.session.role  %}    
+                <li><a href="/admin/" id="header-btn-analysis" > Admin </a></li> 
+  {% endif %}                            
                                 <li><a href="{% url 'analyses' %}" id="header-btn-analysis" > Analyses </a></li> 
                                 <li><a href="{% url 'orders' %}" id="header-btn-orders"> Orders </a></li>
                                 <li><a href="{% url 'samples' %}" id="header-btn-samples"> Samples </a></li>
                                 <li><a href="{% url 'workflows' %}" id="header-btn-workflows" > Workflows </a></li>   
  {% if 'Lab'  in  request.session.role or 'Manager'  in  request.session.role  %}                                   
-                                <li><a href="{% url 'lab_workflows' %}" id="header-btn-lab-workflows"> Lab Workflows </a></li>   
+                                <li class="header-btn-lab-workflows"><a href="{% url 'lab_main' %}" id="header-btn-lab-workflows"> Lab Workflows </a>
+                                <ul class="lab_sub dropdown-menu">
+                                    <li><a href="{% url 'lab_workflows_list' %}" id="header-btn-lab-workflows-list" >Outstanding Lists </a></li>
+                                    <li><a href="{% url 'lab_workflows_dash' %}" id="header-btn-lab-workflows-dashboard" >Dashboard </a></li>
+                                    <li><a href="{% url 'lab_workflows' %}" id="header-btn-lab-workflows-workflows" > Lab Workflows </a></li>
+                                </ul>
+                                </li>   
   {% endif %}                                 
                                 <li><a href="{% url 'reports' %}" id="header-btn-reports" > Reports </a></li> 
 {% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}                                   

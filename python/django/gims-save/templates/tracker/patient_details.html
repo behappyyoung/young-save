@@ -71,7 +71,7 @@
 <script type="text/javascript">
 
 
-    gimpdevApp.controller('trackerController', ['$scope', function($scope) {
+    gimsApp.controller('trackerController', ['$scope', function($scope) {
                 {% autoescape off %}
 
                  {% endautoescape %}
@@ -401,13 +401,13 @@ var proband={'mrn': '{{patient.pid}}'};
                 <br />  
             </div>
             <div class="col-md-5 col-sm-8">
-                <div id="pedigree_image" class="text-center">   
-                {% if files  %}  
-                    {% if 'pdf' in files.0.file_name %}
-                      <embed src="{% static 'IMAGES/Pedigree/' %}{{ files.0.file_name }}" type="application/pdf"> </embed> 
-                      <a class="ppdf" href="{% static 'IMAGES/Pedigree/' %}{{ files.0.file_name }}"  target="_new" > Open </a>
+                <div id="pedigree_image" class="text-center">  
+                {% if ped_file %}  
+                    {% if 'pdf' in ped_file.file_name %}
+                      <embed src="{{ ped_file.url }}" type="application/pdf"> </embed> 
+                      <a class="ppdf" href="{% static 'IMAGES/Pedigree/' %}{{ ped_file.url }}"  target="_new" > Open </a>
                     {% else %}
-                         <a class="pimage" href="{% static 'IMAGES/Pedigree/' %}{{ files.0.file_name }}" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{% static 'IMAGES/Pedigree/' %}{{ files.0.file_name }}"  width=200 height=200/> </a>
+                         <a class="pimage" href="{{ ped_file.url }}" data-lightbox="pedigree" data-title="Pedigree - {{ patient.pid }} " > <img class="pimage" src="{{ ped_file.url }}"  width=200 height=200/> </a>
                     {% endif %}
                  </div> 
 
@@ -441,7 +441,7 @@ var proband={'mrn': '{{patient.pid}}'};
                                 <td>{{ f.file_title }} </td>
                              <td>{{ f.file_name }} </td>
                              <td> {{ f.type }} </td>
-                             <td>{% if f.url %} <a href="{{ f.url }}"> {{ f.file_title }} </a>
+                             <td>{% if f.url %} <a href="{{ f.url }}" target="_new"> {{ f.file_title }} </a>
                                 {% endif %} </td>
 
 

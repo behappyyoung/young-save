@@ -11,8 +11,12 @@
         width: 700px;
         margin: 50px auto;
     }
-    form label, form input, form select, form datalist{
-        width: 300px;
+    form label{
+        width: 200px;
+        margin: 20px auto;
+    }
+    form input, form select, form datalist{
+        width: 400px;
         margin: 20px auto;
     }
     form .actions input{
@@ -104,7 +108,7 @@ function delete_file(fid) {
 
 
                    {% endif %}
-                   <a href="/patient/{{pid}}/Files/" > <input type="button" class="btn btn-sm" value='Cancel'  />   </a>
+                   <a href="/patient/{{pid}}/#files" > <input type="button" class="btn btn-sm" value='Cancel'  />   </a>
                 </div>                  
                    
                 </form>

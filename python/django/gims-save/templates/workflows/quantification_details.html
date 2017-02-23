@@ -1,0 +1,110 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+
+
+
+<style>
+
+td, th {
+    padding: 5px;
+
+}
+
+
+</style>
+<script type="text/javascript">
+	gimsApp.controller('workflowsController', ['$scope', function($scope) {
+                {% autoescape off %}
+
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+
+ {% endif %}
+   
+ 	var tubedetails = ' <table class="table table-stripped text-center"> <tr><th> tube number </th>  <th> asn </th> <th> container # </th>  </tr>';
+
+ 		 {% for d in detail_list %}
+ 		 	tubedetails += '<tr> <td> {{d.tube}} </td><td> {{d.sample.asn }}</td><td> {{d.container}}</td> </tr>';
+ 		 
+ 		 {% endfor %}
+ 		 tubedetails += '</table>';
+
+
+     $scope.Print = function(){
+ 		 var divElements = tubedetails;
+ 		var printWindow = window.open("", "_blank", 'height=590,width=1100');
+                            printWindow.document.open();
+                            printWindow.document.write('<html><head><title>' + $('#dialog-name').val() + '</title><link rel="stylesheet" type="text/css" href="/static/CSS/print.css"></head><body><div id="printingDiv">');
+                            printWindow.document.write(divElements);
+                            printWindow.document.write('</div></body></html>');
+                             setTimeout(function() {
+                                 printWindow.print();
+                                 printWindow.close();
+
+                             }, 100);
+ 	}
+}]);
+</script>
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="">
+
+
+
+	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" /> {{title}} for : {{workflow.name}}
+	</div>  
+
+
+	        <table class="table table-bordered text-center">
+                <tr>
+                    <th> ID </th>
+                    <th> Name </th>
+                    <th> start </th>
+                    <th> updated </th>
+                    <th> status </th>
+
+                </tr>
+
+
+                    <tr class="workflow">
+                        <td>{{workflow.id}}</td>
+                        <td>{{workflow.name}}</td>
+                        <td>{{ workflow.created_date }}</td>
+                        <td>{{ workflow.updated_date }}</td>
+                        <td>{{ workflow.get_status_display }}</td>
+                     </tr>
+            </table>
+
+
+	        <table class="table table-bordered table-striped table-hover">
+                <tr>
+                	<th> Tube Number </th>
+                    <th> Sample ans </th>
+                    <th> container </th>
+                    <th> sample name  </th>
+                    <th> order name </th>
+                    <th> status </th>
+
+                </tr>
+
+                {% for d in detail_list %}
+                    <tr class="workflow">
+                    	<td> {{d.tube}}</td>
+                        <td>{{d.sample.asn}}</td>
+                        <td>{{d.container}}</td>
+                        <td>{{ d.sample }}</td>
+                        <td>{{ d.order }}</td>
+                        <td>{{ d.order.get_lab_status_display }}</td>
+                     </tr>
+                 {% endfor %}
+            </table>
+
+            <button class="btn btn-primary btn-sm" ng-click="Print()"> Print Tube </button> 
+</div>
+
+
+
+</div>
+
+{% endblock %}

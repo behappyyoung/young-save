@@ -52,6 +52,59 @@ function pieChart(name_id, dataArray, optionsObj){
  $(document).ready(function(){
     // menu item initialize with sessionStorage
 
+    var today = new Date();
+    var sdate, edate;
+    if(window.location.search.substr(1)){
+                    var inputdate = window.location.search.substr(1).split('~');
+                    sdate = inputdate[0];
+                    edate = inputdate[1];
+
+        }else{
+
+            if( today.getMonth()<1){
+                sdate = (today.getFullYear()-1)+'-'+'12'+'-'+('0' + today.getDate()).substr(-2);
+            }else{
+                sdate = today.getFullYear()+'-'+('0'+( parseInt(today.getMonth()) )).substr(-2)+'-'+('0' + today.getDate()).substr(-2);
+            }
+
+             edate = today.getFullYear()+'-'+('0'+( parseInt(today.getMonth())+1 )).substr(-2)+'-'+('0' + today.getDate() ).substr(-2);      
+        }
+        console.log('sdate', sdate, 'edate', edate);
+      $( "#datepicker_start" ).val(sdate).datepicker({
+                    dateFormat: 'yy-mm-dd',
+                    defaultDate: sdate,
+                    setDate: sdate,
+                });
+      $( "#datepicker_end" ).val(edate).datepicker({
+                    dateFormat: 'yy-mm-dd',
+                    defaultDate: edate,
+                    setDate: edate,
+                    onSelect: function(dateText) {
+                        window.location = '?'+$('#datepicker_start').val()+"~"+dateText+"";
+                    }
+      });
+
+      $('#select-period').change(function(){     // when period updated
+         console.log(this.value);
+
+
+             edate = today.getFullYear()+'-'+('0'+( parseInt(today.getMonth())+1 )).substr(-2)+'-'+('0' + today.getDate() ).substr(-2);    
+
+            if(this.value =='Month'){
+                if( today.getMonth()<1){
+                    sdate = (today.getFullYear()-1)+'-'+'12'+'-'+('0' + today.getDate()).substr(-2);
+                }else{
+                    sdate = today.getFullYear()+'-'+('0'+( parseInt(today.getMonth()) )).substr(-2)+'-'+('0' + today.getDate()).substr(-2);
+                }
+            }else if(this.value =='Year'){
+                  sdate = (today.getFullYear()-1)+'-'+('0'+( parseInt(today.getMonth())+1 )).substr(-2)+'-'+('0' + today.getDate() ).substr(-2);    
+            }else if(this.value =='Total'){
+                  sdate = '2016-01-01';
+            }
+            
+            window.location = '?'+sdate+"~"+edate+"";
+        });
+
     getWidget();
     if(sessionStorage.dash){
       dashArray = sessionStorage.dash.split(',')

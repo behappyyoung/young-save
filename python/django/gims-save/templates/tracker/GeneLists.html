@@ -1,7 +1,7 @@
 {% extends "tracker/tracker_base.html" %}
 {% block content %}
 <script type="text/javascript">
-	 gimpdevApp.controller('trackerController', ['$scope', function($scope) {
+	 gimsApp.controller('trackerController', ['$scope', function($scope) {
                 {% autoescape off %}
 
                            $scope.genelists = JSON.parse('{{ genelists }}');

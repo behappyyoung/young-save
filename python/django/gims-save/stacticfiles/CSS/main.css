@@ -32,6 +32,17 @@ form select{
     float: right;
     margin: 3px;
 }
+.flex{
+        display: flex;
+}
+.flex .left-flex,.flex .right-flex, .flex .flex-left, .flex .lex-right {
+    width: 50%;
+}
+.tabs button{
+    font-size: 0.7em;
+}
+.top-buffer { margin-top:30px; }
+
 .main-header {
   display: -webkit-flex; /* Safari */
   display: flex;

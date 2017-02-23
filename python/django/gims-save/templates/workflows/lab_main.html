@@ -1,0 +1,46 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+
+
+
+<style>
+.samples-list{
+    height: 800px;
+    overflow: auto;
+}
+
+td, th {
+    padding: 5px;
+
+}
+
+
+</style>
+<script type="text/javascript">
+gimsApp.controller('workflowsController', ['$scope', function($scope) {
+                {% autoescape off %}
+                          
+                 {% endautoescape %}
+
+
+ }]);
+
+ jQuery(document).ready(function() {
+
+
+    });
+</script>
+
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="panel">
+    <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" />{{ title }}    </div>  
+
+</div>
+    <div class="panel sub-title"><a href="{% url 'lab_workflows_list' %}" id="btn-lab-workflows-list" > Outstanding Lists </a> </div>
+    <div class="panel sub-title"><a href="{% url 'lab_workflows_dash' %}" id="btn-lab-workflows-dashboard" >  Dashboard </a> </div>
+    <div class="panel sub-title"> <a href="{% url 'lab_workflows' %}" id="btn-lab-workflows-workflows" >Workflows  </a></div>
+</div>
+
+{% endblock %}

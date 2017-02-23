@@ -17,10 +17,9 @@ table.files.table{
 </style>
 
 <script type="text/javascript">
-	  gimpdevApp.controller('trackerController', ['$scope', function($scope) {
+	  gimsApp.controller('trackerController', ['$scope', function($scope) {
                 {% autoescape off %}
                          $scope.samples = {{ samples }};
-                         $scope.samplefiles = {{ samplesfiles }};
                           $scope.workflowList = [];
 
                          $scope.workflows = JSON.parse('{{ workflows }}');
@@ -34,22 +33,28 @@ table.files.table{
                  console.log('sample', $scope.samples, 'samplefiles' , $scope.samplefiles, 'workflows', $scope.workflows, 'workflowList', $scope.workflowList);
  }
     }]);
+$(function () {
+    'use strict';
+    $('#tabs').tabs();
 
+});  
 </script>
 
 <div ng-controller="trackerController" class="tracker details">
 
 
-    <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-samples.png" />  Sample : {$ samples[0].name $} </div>
+    <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-samples.png" />  {{title}} </div>
     <div class="details-top">
 	        <div class="main-left text-center">
-	            <div> <div class="label"> ASN </div> <div class="value">{$ samples[0].asn $} </div></div>
-	             <div> <div class="label"> Container </div> <div class="value">{$ samples[0].container $} </div></div>
-				<div> <div class="label"> Patient ID </div> 
+	            <div> <div class="label"> ASN </div> <div class="value">{{ so.0.sample.asn }} </div></div>
+	            
+	             <div> <div class="label"> Collection Date  </div> <div class="value">{{ so.0.sample.collection_date }} </div></div>
+	             
+				<div> <div class="label"> Patient  </div> 
 					<div class="value"> 
 					
 {% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
-						<a href="/patient/{$ samples[0].patient_id $}">	{$ samples[0].patient_id $} </a>
+						<a href="/patient/{{ so.0.patient_id }}/">	{{ so.0.patient.first_name }} {{ so.0.patient.last_name }} </a>
 {% else %}
 		--
 {% endif %} 
@@ -57,71 +62,80 @@ table.files.table{
 				</div>
 	        </div>
 	        <div class="main-right text-ceneter">
-	        	<div> <div class="label"> Collection Date  </div> <div class="value">{$ samples[0].collection_date.$date|date:"y-M-d" $} </div></div>
-	            <div> <div class="label"> Source  </div> <div class="value">{$ samples[0].source $} </div></div>
-	            <div> <div class="label"> Type </div> <div class="value">{$ samples[0].type $}</div></div>
-	            
+	        	
+	            <div> <div class="label"> Source  </div> <div class="value">{{ so.0.sample.source }} </div></div>
+	            <div> <div class="label"> Type </div> <div class="value">{{ so.0.sample.type }}</div></div>
+	             <div> <div class="label"> Status </div> <div class="value">{{so.0.sample.status}} </div></div>
 	        </div>
   	</div>
-    <div class="main">
-	    <div class="orders">
-	        <div  class="sub-sub-title"> Related Orders 
-	        </div>
+  	    <div class=" details-bottom" id="details-bottom">
 
-				<table class="table table-bordered table-striped table-hover">
-					<tr>
 
-			            <th> Order </th>
-			            <th> Status </th>
-			            <th> Order Type </th>
-			            <th> Registered Files</th>
-					</tr>
-					<tr ng-repeat="s in samples "  id='{$ w.id $}' class="sample">
-			            <td><a href="/order/{$ s.order_id $}/">{$ s.order_name $}</a></td>
-			            
-			            <td> {$ s.order_status $}</td>
-			            <td>{$ s.order_type $}</td>
-			            <td>
+                         <div>
+                         <div class="label"> Notes </div>
+                        <div class="value"> {{ so.0.sample.notes }} </div>
+                        </div>
+  </div>
 
-					 	  		<table class="table table-bordered  files">
-					 	  			<tr>
+   <div class="tabs top-buffer" id="tabs">
+            <ul>
+               
+                <li><a href="#orders" class="tab-menu" > Related Orders  </a></li>
+                 <li><a href="#patient" class="tab-menu" > Related Patients  </a></li>
+               <li><a href="#analyses" class="tab-menu" > Related Analyses  </a></li>
+               <li><a href="#files" class="tab-menu" > Related Files  </a></li>
+            </ul>
+             <div class="tab orders" id="orders">
+                    <div  class="sub-sub-title"> 
 
-							            <th> File Name </th>
-							            <th> Loom ID </th>
+                     </div>
+                <table class="table table-bordered table-striped table-hover">
+                    <tr>
+                        <th> order  </th>
+                        <th> type </th>
+                        <th> status </th>
+                        <th>  </th>
+                    </tr>
+                    {% for o in so %}
+                    <tr id='{{ o.id }}' class="list">
 
-									</tr>
-									<tr ng-repeat="sf in samplefiles | filter:order_id=s.order_id "   class="sample">
+                        <td><a href="/Patient/{{ p.patient.pid }}/">{{ o.order }}</a></td>
+                        <td>{{ o.order.type }}</td>
+                        <td>{{ o.order.status }}</td>
+                        <td> </td>
+                               
 
-							            <td>{$ sf.file_name $}</td>
-							            <td>{$ sf.loom_id $}</td>
 
-									</tr>
-								</table>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+             <div class="tab Patient" id="patient">
+                    <div  class="sub-sub-title"> 
 
-			            </td>
-					</tr>
-				</table>
-		</div>
-<!-- 	   <div class="main-right">
-	 	  	<div class="sub-sub-title"> Related Files </div>	
-	 	  		<table class="table table-bordered table-striped table-hover files">
-	 	  			<tr>
+                     </div>
+                <table class="table table-bordered table-striped table-hover">
+                    <tr>
+                        <th> Patient  </th>
+                        <th> MRN </th>
+                        <th> DOB </th>
+                        <th> relation </th>
+                    </tr>
+                    {% for p in so %}
+                    <tr id='{{ o.id }}' class="list">
 
-			            <th> Order </th>
-			            <th> File Name </th>
-			            <th> Loom ID </th>
+                        <td><a href="/Patient/{{ p.patient.pid }}/">{{ p.patient.first_name }} {{ p.patient.last_name }}</a></td>
+                        <td>{{ p.patient.mrn }}</td>
+                        <td>{{ p.patient.dob }}</td>
+                        <td> {{ p.relation }}
+                               
 
-					</tr>
-					<tr ng-repeat="sf in samplefiles "  id='{$ w.id $}' class="sample">
-			            <td><a href="/order/{$ sf.order_id $}/">{$ sf.ordername $}</a></td>
-			            <td>{$ sf.file_name $}</td>
-			            <td>{$ sf.loom_id $}</td>
 
-					</tr>
-				</table>
-    	</div> -->
-    	<div class="clearfix"></div>
-    	<div class="sub-sub-title "> Related Analyses </div>	
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            <div class="sub-sub-title tab" id="analyses"> 
     		 	 <table class="table table-bordered table-striped table-hover">
 	 	  			<tr>
 
@@ -140,7 +154,32 @@ table.files.table{
 			            <!-- <td>{$ wf.loomResponse $}</td> -->
 					</tr>
 				</table>
-	</div>
+			</div>
+			<div class="tab files" id="files">
+					<table class="table table-bordered  files">
+					 	  			<tr>
+
+							            <th> File Name </th>
+							            <th> type </th>
+							            <th> Loom ID </th>
+							            <th> Location </th>
+
+									</tr>
+									{% for sf in files %}
+									<tr >
+
+							            <td>{{ sf.file_name }}</td>
+							             <td>{{ sf.file_type }}</td>
+							            <td>{{ sf.loom_id }}</td>
+							             <td>{{ sf.file_location }}</td>
+
+									</tr>
+									{% endfor %}
+					</table>
+				
+			</div>
+    </div>
+
 
 
 </div>

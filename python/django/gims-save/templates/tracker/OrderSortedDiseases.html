@@ -133,13 +133,13 @@ jQuery(document).ready(function(){
     {% endautoescape %}
 
 if(window.location.hostname =='gims-dev.shc.org'){
-            //    console.log('hpo_list', hpo_list, 'disease_list',disease_list, 'scores', scores);
+               console.log('hpo_list', hpo_list, 'disease_list',disease_list, 'scores', scores);
 
  }
  var scoreSize = (disease_list.length > 20)? 20: disease_list.length;
   var titleDiv = '';
   var titleString='';
-  for(var i=0;i<20;i++){
+  for(var i=0;i<scoreSize;i++){
     titleString = (disease_list[i].length > 25) ? disease_list[i].substr(0,20)+'...' : disease_list[i];
     titleDiv += '<div class="title">' + titleString + '</div>';
   }

@@ -1,103 +1,277 @@
+<style>
+
+    .chart .legend {
+        fill: black;
+        font: 14px sans-serif;
+        text-anchor: start;
+        font-size: 12px;
+    }
+
+    .chart text.in-bar {
+        fill: white;
+        font: 10px sans-serif;
+        text-anchor: end;
+    }
+
+    .chart .label {
+        fill: black;
+        font: 14px sans-serif;
+        text-anchor: end;
+    }
+
+    .bar:hover {
+        fill: brown;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+</style>
 
 <script type="text/javascript">
 
  jQuery(document).ready(function() {
-        $('#select-processing-time-by-step').change(function(){     // when period updated
-         console.log(this.value);
-         options='test';
-            if(this.value =='day'){
 
-            }else if(this.value =='week'){
-
-            }else{
-
-            }
-            draw_processing_time_by_step(options);
-        });
-    draw_processing_time_by_step();      // default
+    // draw_processing_time_by_step();      // default
  });
 </script>
 <div class="chart-wrapper" >
-    <h4> Processing time by  Steps  </h4>
-    <div class="period" >
-         <select id="select-processing-time-by-step">
-            <option> Last 6 Month </option>
-            <option> Last Month </option>
-            <option> Last Year </option>
-         </select>
-     </div>
+    <h4> Average Processing Time by Steps  </h4>
 
-
-<div id="bar_processing_time_by_step" class="chart-bar" style="min-width: 610px; max-width: 800px; height: 400px; margin: 0 auto"></div>
-
+<!-- <div id="bar_processing_time_by_step" class="chart-bar" style="min-width: 610px; max-width: 800px; height: 400px; margin: 0 auto"></div> -->
+<svg class="chart"></svg>
 </div>
 
 <script type="text/javascript">
+      var categories = [];
+        var total_values = [];
+        var total_values_text = [];
+        var period_values =[];
+        var period_values_text =[];
+        var temp_str = '';
+        var temp_arr;
+{% for mykey,myvalue in processing_time.total.items %}
+        categories.push('{{mykey}}');
+        total_values.push(parseInt('{{myvalue.a_time}}'));
+        if(parseInt('{{myvalue.a_time}}') >= 86400){
+            temp_arr = '{{myvalue.a_time_str}}'.split(', ');
+            temp_str = temp_arr[0]; 
+            temp_arr = temp_str[1].split(':');
+        }else{
+            temp_arr = '{{myvalue.a_time_str}}'.split(':');
+        }
 
-    draw_processing_time_by_step = function(options){
+        
+        if ( parseInt(temp_arr[0]) > 0 ){
+                temp_str += " " + parseInt(temp_arr[0]) + ' Hours ';
+        }
 
+        if ( parseInt(temp_arr[1]) > 0 ){
+                temp_str += " " + parseInt(temp_arr[1]) + ' Mins ';
+        }
 
-        var process_by_step_chart = $('#bar_processing_time_by_step').highcharts({
-            chart: {
-                type: 'bar'
+        // if ( parseInt(temp_arr[2]) > 0 ){
+        //         temp_str += " " + parseInt(temp_arr[2]) + ' Seconds ';
+        // }
+
+        total_values_text.push(temp_str);
+        temp_str = '';
+{% endfor %}
+
+    
+{% for mykey,myvalue in processing_time.period.items %}
+        period_values.push( parseInt('{{myvalue.a_time}}'));   
+        
+        if(parseInt('{{myvalue.a_time}}') >= 86400){
+            temp_arr = '{{myvalue.a_time_str}}'.split(', ');
+            temp_str = temp_arr[0]; 
+            temp_arr = temp_str[1].split(':');
+        }else{
+            temp_arr = '{{myvalue.a_time_str}}'.split(':');
+        }
+        
+        if ( parseInt(temp_arr[0]) > 0 ){
+                temp_str += " " + parseInt(temp_arr[0]) + ' Hours ';
+        }
+
+        if ( parseInt(temp_arr[1]) > 0 ){
+                temp_str += " " + parseInt(temp_arr[1]) + ' Mins ';
+        }
+
+        // if ( parseInt(temp_arr[2]) > 0 ){
+        //         temp_str += " " + parseInt(temp_arr[2]) + ' Seconds ';
+        // }
+
+        period_values_text.push(temp_str);
+        temp_str = '';
+{% endfor %}
+
+console.log(color, 'period_values', period_values, period_values_text, total_values, total_values_text);
+    var data = {
+        labels: categories,
+        series: [
+            {
+                label: 'total',
+                values: total_values,
+                text: total_values_text
             },
-            title: {
-                text: '  '
-            },
-            subtitle: {
-                text: ''
-            },
-            xAxis: {
-                categories: ['Biofx', 'Review', 'Interpretation', 'Lab', 'Report'],
-                title: {
-                    text: null
-                }
-            },
-            yAxis: {
-                min: 0,
-                title: {
-                    text: 'Processing Time ( days )',
-                    align: 'high'
-                },
-                labels: {
-                    overflow: 'justify'
-                }
-            },
-            tooltip: {
-                valueSuffix: ' days'
-            },
-            plotOptions: {
-                bar: {
-                    dataLabels: {
-                        enabled: true
-                    }
-                }
-            },
-            legend: {
-                layout: 'vertical',
-                align: 'right',
-                verticalAlign: 'top',
-                x: -40,
-                y: 80,
-                floating: true,
-                borderWidth: 1,
-                backgroundColor: ((Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'),
-                shadow: true
-            },
-            credits: {
-                enabled: false
-            },
-            series: [{
-                name: 'Total',
-                data: [37, 31, 35, 103, 5]
-            }, {
-                name: 'Period Average',
-                data: [33, 56, 47, 108, 6]
-            }]
-        });
-        window.pchart = process_by_step_chart;
-         console.log(options, process_by_step_chart);
+
+            {
+                label: 'Period',
+                values: period_values,
+                text:period_values_text
+            },]
+    };
+
+    var chartWidth       = 400,
+            barHeight        = 20,
+            groupHeight      = barHeight * data.series.length,
+            gapBetweenGroups = 20,
+            spaceForLabels   = 150,
+            spaceForLegend   = 150;
+
+    // Zip the series data together (first values, second values, etc.)
+    var zippedData = [];
+    for (var i=0; i<data.labels.length; i++) {
+        for (var j=0; j<data.series.length; j++) {
+            zippedData.push(data.series[j].values[i]);
+        }
     }
+
+    // Color scale
+    var color = d3.scaleOrdinal(d3.schemeCategory10);;
+    var chartHeight = barHeight * zippedData.length + gapBetweenGroups * data.labels.length;
+console.log('color', color);
+window.ccolor = color;
+    var x = d3.scaleLinear()
+    .domain([0, d3.max(zippedData)])
+    .range([0, chartWidth]);
+
+    var y = d3.scaleLinear()
+    .range([chartHeight + gapBetweenGroups, 0]);
+
+//  var yAxis = d3.svg.axis()
+//  .scale(y)
+//  .tickFormat('')
+//  .tickSize(0)
+//  .orient("left");
+    var xAxis = d3.axisBottom(x)
+    .tickSize(0)
+    .tickFormat('');
+
+    var yAxis = d3.axisLeft(y)
+    .tickSize(0)
+    .tickFormat('');
+    // Specify the chart area and dimensions
+    var chart = d3.select(".chart")
+    .attr("width", spaceForLabels + chartWidth + spaceForLegend+100)
+    .attr("height", chartHeight);
+
+    // Create bars
+    var bar = chart.selectAll("g")
+    .data(zippedData)
+    .enter().append("g")
+    .attr("transform", function(d, i) {
+        return "translate(" + spaceForLabels + "," + (i * barHeight + gapBetweenGroups * (0.5 + Math.floor(i/data.series.length))) + ")";
+    });
+
+    // Create rectangles of the correct width
+    bar.append("rect")
+    .attr("fill", function(d,i) {  console.log(d, i, color(i % data.series.length));return color(i % data.series.length); })
+    .attr("class", "bar")
+    .attr("width", x)
+    .attr("height", barHeight - 1);
+
+    // Add text label in bar
+    bar.append("text")
+    .attr("class", "in-bar")
+    .attr("x", function(d) { return x(d) - 3; })
+    .attr("y", barHeight / 2)
+    .attr("fill", "white")
+    .attr("dy", ".35em")
+    .text(function(d, i) { return d; });
+    // .text(function(d,i) {
+    //     if (i % data.series.length === 0)
+    //         return d + data.series[0].text[i];
+    //     else
+    //         return d + data.series[1].text[i];});
+    // Draw Step labels
+    bar.append("text")
+    .attr("class", "label")
+    .attr("x", function(d) { return - 20; })
+    .attr("y", groupHeight / 2)
+    .attr("dy", ".35em")
+    .text(function(d,i) {
+        if (i % data.series.length === 0)
+            return data.labels[Math.floor(i/data.series.length)];
+        else
+            return ""});
+
+    // Draw Text Str
+    bar.append("text")
+    .attr("class", "text-str")
+    .attr("x", function(d) { return x(d) + 20; })
+    .attr("y", barHeight * (parseInt(i/2)-1)-10 )
+    .attr("dy", ".35em")
+    .style('fill', function (d, i) { return color(0); })
+    .text(function(d,i) {
+        var k = parseInt(i /2);
+        console.log('barHeight', barHeight,'groupHeight', groupHeight, 'd, i', d, i, data.series[0].text[k], data.series[1].text[k]);
+        if (i %  2 == 0)
+            return data.series[0].text[k];
+        else
+            return data.series[1].text[k];});
+
+//  // Add custom text label in bar
+//  bar.append("text")
+//  .attr("x", function(d) { return x(d)+100; })
+//  .attr("y", barHeight / 2)
+//  .attr("fill", "red")
+//  .attr("dy", ".35em")
+//  .text(function(d) { return 'test'; });
+
+    chart.append("g")
+    .attr("class", "y axis")
+    .attr("transform", "translate(" + spaceForLabels + ", " + -gapBetweenGroups/2 + ")")
+    .call(yAxis);
+
+    chart.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(" + spaceForLabels + ", " + ( (groupHeight + gapBetweenGroups) * data.labels.length - 1) + ")")
+    .call(xAxis);
+
+    // Draw legend
+    var legendRectSize = 18,
+            legendSpacing  = 4;
+
+    var legend = chart.selectAll('.legend')
+    .data(data.series)
+    .enter()
+    .append('g')
+    .attr('transform', function (d, i) {
+        var height = legendRectSize + legendSpacing;
+        var offset = -gapBetweenGroups/2;
+        var horz = spaceForLabels + chartWidth + 40 - legendRectSize;
+        var vert = i * height - offset;
+        return 'translate(' + horz + ',' + vert + ')';
+    });
+
+    legend.append('rect')
+    .attr('width', legendRectSize)
+    .attr('height', legendRectSize)
+    .style('fill', function (d, i) { return color(i); })
+    .style('stroke', function (d, i) { return color(i); });
+
+    legend.append('text')
+    .attr('class', 'legend')
+    .attr('x', legendRectSize + legendSpacing)
+    .attr('y', legendRectSize - legendSpacing)
+    .text(function (d) { return d.label; });
+
+
 
 
 

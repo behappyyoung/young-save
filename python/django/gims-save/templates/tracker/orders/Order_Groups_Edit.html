@@ -1,0 +1,158 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+<style type="text/css">
+	.form-wrapper{
+		width: 600px;
+		margin: 50px auto;
+	}
+	.form {
+		width: 600px;
+		margin: 50px auto;
+	}
+	form label, form input, form select, form datalist, form textarea{
+		width: 300px;
+		margin: 20px auto;
+
+	}
+
+	form .actions input{
+		width: 200px;
+	}
+	.alert{
+		width: 600px;
+	}
+
+	.errorlist{
+		position: absolute;
+		color: red;
+		    margin-top: -10px;
+    margin-left: 300px;
+	}
+</style>
+<script type="text/javascript">
+jQuery(document).ready(function() {
+
+ {% if 'Add' in action or 'New' in action %}
+ 	document.getElementById('id_order').outerHTML = document.getElementById('id_order').outerHTML.replace(/select/g, 'datalist');
+ 	$('#id_order').after('<input list="id_order" name="order">');
+	$('input[name="order"]').attr('placeholder', 'oder id /  order name').val($('#id_order option[datalisted=datalisted]').val());
+{% else %}
+	$('#id_order option[selected!="selected"]').hide();
+{% endif %} 
+
+
+});
+
+function goback() {
+	{% if oid %}
+		var gobackUrl = "/order/{{ oid }}/";
+	{% else %}
+		var gobackUrl = "/order/groups/";
+	{% endif %}
+	window.location.href = gobackUrl;
+}
+function formSubmit(action){
+
+	if( action =='delete' && confirm('are you sure to delete?')){
+		$('#relForm').find("input[name=action]").val(action);	
+		$('#relForm').submit();
+	}else if( action =='edit' ){
+		$('#relForm').find("input[name=action]").val(action);
+		$('#relForm').submit();
+	}
+
+}
+
+
+function delete_member(gid, oid) {
+        $.ajax({
+            url:'/mybackend/magic_function/delete_order/',
+            type:'json',
+            method:'POST',
+            data:{gid: gid, oid: oid},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+            	console.log(data);
+            	if(data=='Done'){
+            		location.reload();
+            	}
+            }
+            });
+ };
+</script>
+<div class="tracker">
+	<div class="sub-title"> 
+		{% if 'New' in action %}
+	    	New Order Group 
+	    {% elif 'Add' in action %}
+	    	Add Order to Order Group {{groups.0.group_id}}
+	    {% else %}
+	    	 Edit Order Group 
+	    {% endif %} 
+	 </div>
+
+	<div class="form-wrapper">
+			{% if messages %}
+			<div class="alert alert-info">
+				{% for message in messages %}
+				 	{{message}}
+				 {% endfor %} 
+			 </div>
+			{% endif %}
+	            <form action="/order/groups/{{action}}/" method="post" id="relForm">
+	                {% csrf_token %}
+	                {% if 'Add' in action or 'New' in action %}
+	                	
+	                 {% endif %} 
+	                {{ form }}
+	                 
+	              <div class="actions">
+
+	              {% if 'Add' in action or 'New' in action %}
+	                <input type="submit"  name="action"  value='Add' class="btn btn-primary btn-sm"  />   
+	                 <input type="button" class="btn btn-sm" value='Cancel' onclick="goback();" />   
+	                {% else %}
+
+	                 <input type="text"  name="action"  value='Save' onclick="formSubmit('edit');" class="btn btn-primary btn-sm"  />   
+	 				<input type="button" class="btn btn-sm" value='Cancel' onclick="goback();" />   
+	                 <input type="text" value="Delete" onclick="formSubmit('delete');" class="btn btn-primary btn-sm"  />   
+	               {% endif %}
+	               
+	            </div>  				
+	               
+	            </form>
+
+	           
+	</div>            
+	<div>
+		<div class="sub-sub-title"> Order Groups </div>
+		       <table class="table table-bordered table-striped table-hover">
+                        <tr>
+
+                            <th>  group ID </th>
+                            <th> order ID </th>
+                            <th> order name  </th>
+                            <th> relation </th>
+                            <th></th>
+                        </tr>
+
+                        {% for g in groups %}
+
+                        <tr class="familylist">
+                        <td><a href="/order/groups/?gid={{ g.group_id }}"> {{ g.group_id }} </a> </td>
+                             <td><a href="/order/{{ g.order.id }}/"> {{ g.order.id }} </a> </td>
+                            <td><a href="/order/{{ g.order.id }}/">  {{ g.order }} </a> </td>
+                            <td> {{ g.relation }}</td>
+                            <td> <button id="delete_order" class="button btn-sm btn-default" onclick="delete_member('{{ g.group_id }}', '{{ g.order.id }}')"> Delete </button> </td>
+                        </tr>
+                        {% endfor %}
+
+                </table>
+	</div>
+</div>
+{% endblock content %}

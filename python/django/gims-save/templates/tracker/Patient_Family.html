@@ -53,7 +53,7 @@ function formSubmit(action){
 	if( action =='delete' && confirm('are you sure to delete?')){
 		$('#relForm').find("input[name=action]").val(action);	
 		$('#relForm').submit();
-	}else if( action =='edit' ){
+	}else if( action =='Edit' ){
 		$('#relForm').find("input[name=action]").val(action);
 		$('#relForm').submit();
 	}
@@ -87,9 +87,9 @@ function delete_member(fid, pid) {
 		{% if 'New' in action %}
 	    	New Family Group 
 	    {% elif 'Add' in action %}
-	    	Add Patient Family Member
+	    	Add Patient Family Member : <a href="/families/?fid={{ family.0.family_id }}"> {{ family.0.family_id }} </a> 
 	    {% else %}
-	    	 Edit Family Group 
+	    	 Edit Family Group : <a href="/families/?fid={{ family.0.family_id }}"> {{ family.0.family_id }} </a> 
 	    {% endif %} 
 	 </div>
 
@@ -107,7 +107,7 @@ function delete_member(fid, pid) {
 	                 <input type="button" class="btn btn-sm" value='Cancel' onclick="goback();" />   
 	                {% else %}
 
-	                 <input type="text"  name="action"  value='Save' onclick="formSubmit('edit');" class="btn btn-primary btn-sm"  />   
+	                 <input type="text"  name="action"  value='Save' onclick="formSubmit('Edit');" class="btn btn-primary btn-sm"  />   
 	 				<input type="button" class="btn btn-sm" value='Cancel' onclick="goback();" />   
 	                 <input type="text" value="Delete" onclick="formSubmit('delete');" class="btn btn-primary btn-sm"  />   
 	               {% endif %}
@@ -123,19 +123,31 @@ function delete_member(fid, pid) {
 		       <table class="table table-bordered table-striped table-hover">
                         <tr>
 
-                            <th>  Family ID </th>
+                           
                             <th> Patient ID </th>
                             <th> MRN </th>
+                            <th> Role</th>
+                            <th> Affected </th>
+                            <th> first name </th>
+                            <th> middle name </th>
+                            <th> last name </th>
                             <th></th>
                         </tr>
 
                         {% for f in family %}
 
                         <tr class="familylist">
-                        <td><a href="/families/?fid={{ f.family_id }}"> {{ f.family_id }} </a> </td>
+                       
                              <td><a href="/patient/{{ f.patient.pid }}/"> {{ f.patient }} </a> </td>
                             <td>{{ f.patient.mrn }}</td>
-                            <td> <button id="delete_member" class="button btn-sm btn-default" onclick="delete_member('{{ f.family_id }}', '{{ f.patient.id }}')"> Delete </button> </td>
+                            <td>{{ f.role }}</td>
+                            <td>{{ f.affectedstatus }}</td>
+                            <td>{{ f.patient.first_name }}</td>
+                            <td>{{ f.patient.middle_name }}</td>
+                             <td>{{ f.patient.last_name }}</td>
+                            <td>
+                              <button id="edit_member" class="button btn-sm btn-default" ><a href="/families/Edit/?fid={{ f.family_id }}&pid={{f.patient_id}}"> Edit </a> </button>
+                              <button id="delete_member" class="button btn-sm btn-default" onclick="delete_member('{{ f.family_id }}', '{{ f.patient.id }}')"> Delete </button> </td>
                         </tr>
                         {% endfor %}
 

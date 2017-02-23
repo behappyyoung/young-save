@@ -1,0 +1,485 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+
+<style type="text/css">
+.samplelist {
+    cursor: pointer;
+}
+.physician-phenotypes{
+    vertical-align: top;
+    display: flex;
+    margin: 10px auto;
+}
+.physician-phenotypes label{
+    width: 100px;
+}
+.physician-phenotypes textarea{
+    width: 400px;
+}
+.genelist .name{
+    text-transform: capitalize;
+}
+.top-hr {
+    border-top: dotted 1px #242525;
+    padding-top: 10px;
+}
+
+.flag{
+    width: 100%;
+    background-color: red;
+    color : white;
+}
+.tab-menu{
+    text-transform: capitalize;
+}
+#details-bottom{
+    display: none;
+}
+
+</style>
+
+<script type="text/javascript">
+	  gimsApp.controller('trackerController', ['$scope', function($scope) {
+                {% autoescape off %}
+                            // $scope.orders = {{groups}};
+                        //    $scope.phenolists = {{phenolists}};
+                            // var cList = {{c_list}};
+                       //     $scope.checkInput = (cList.checkInput =="") ? [] : cList.checkInput.split(',');
+                       //     $scope.textInput = JSON.parse(cList.textInput);
+                           $scope.workflowList = [];
+
+                         $scope.workflows = JSON.parse('{{ workflows }}');
+                         for(var i=0;i<$scope. workflows.length; i++){
+                                $scope.workflows[i].fields.id = $scope.workflows[i].pk;
+                                $scope.workflowList.push($scope. workflows[i].fields);
+                         }                           
+                 {% endautoescape %}
+
+if(window.location.hostname =='gims-dev.shc.org'){
+                console.log('phenolists', $scope.phenolists, 'f', $scope.father, 'm', $scope.mother,'proband', $scope.proband, 'sibling', $scope.sibling);
+
+ }	
+
+
+    $('#btn-history').on('click', function () {
+        // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
+        $.ajax({
+            url:'/mybackend/get_log/order/',
+            type:'json',
+            method:'POST',
+            data:{'oid': {{so.0.order_id}} },
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> update  </th><th> action</th><th> Author </th></thead><tbody>';
+                for(var i=0; i<json_data.length; i++){
+                    hHtml += '<tr><td class="date">'+json_data[i].fields.update_time+
+                    '</td><td>'+json_data[i].fields.action+'</td><td>'+json_data[i].fields.user_id+'</td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+
+            }
+         });
+    });
+    $('#btn-notes').on('click', function () {
+        $.ajax({
+            url:'/mybackend/get_notes/',
+            type:'json',
+            method:'POST',
+            data:{'oid':  {{so.0.order_id}} },
+            error: function()
+            {
+                 console.log('error');
+            },
+            success: function(data)
+            {   
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> date </th><th> category </th><th> Note </th><th> Author </th></thead><tbody>';
+                var urgent='';
+                var recipients='';
+                var writer='';
+                for(var i=0; i<json_data.length; i++){
+                    urgent = (json_data[i].category.trim() == 'Urgent Matter')? 'danger' : '';
+                    recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null )? '' : json_data[i].recipients;
+                    writer = (typeof json_data[i].writer ==='undefined' || json_data[i].writer === null )? '' : json_data[i].writer;
+                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="date">'+json_data[i].update_time+
+                    '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+writer+'</td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+                $('.note-detail').on('click', function() {
+                    console.log('this note', this.id);
+                    // body...
+                })
+            }
+         });
+    });
+
+     }]);
+
+var family=[];
+{% autoescape off %}
+        var orders = [];                     
+{% endautoescape %}
+
+var proband={'mrn': '{{patient.pid}}'};
+ for(var i=0 ; i<orders.length; i++){
+
+        family.push({relative:orders[i].patient_id, relationship: orders[i].rel_name, ethnicity: '', mrn: orders[i].patient_id});
+
+}
+{% include "com/js_relation_tree.js" %}
+
+
+
+
+	
+ 
+$(function () {
+    'use strict';
+    $('#tabs').tabs();
+
+});    
+function run_cartagenia(group_id){
+    $.ajax({
+            url:'/mybackend/run_cartagenia/'+group_id+'/',
+            type:'json',
+            method:'GET',
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+
+
+            }
+         });
+}
+
+function show_more() {
+    $('#details-bottom').toggle();
+    if($('#details-bottom').css('display')=='none'){
+        $('#show_more').html('Show More');
+    }else{
+        $('#show_more').html('Show Less');
+    }
+}
+
+</script>
+
+<div ng-controller="trackerController" class="tracker orders details">
+
+
+
+    <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" />  Order : {{ so.0.order }} 
+     <a href="/order/{{ so.0.order_id }}/Notes/" target="_new"  ><button class="btn btn-primary btn-sm right-button "> Add Notes </button> </a>
+     <button class="btn btn-primary btn-sm right-button "  id="btn-notes">Notes </button> 
+    <button class="btn btn-primary btn-sm  right-button" id="btn-history"> Update History </button> 
+
+
+      <a href="/order/{{ so.0.order_id }}/edit/"><button class="btn btn-primary btn-sm  right-button"> Edit Order Info </button> </a> 
+
+      </div>
+    
+    <div class="popup">
+        <button class="close" onclick="$('.popup').css('display', 'none');">X</button>
+        <div id="popup"> </div> 
+    </div>
+
+
+
+    <div class="details details-top">
+         {% if so.0.order.flag %}
+             <div class="flag  text-center">  {{ so.0.order.flag }}  </div> 
+        {% endif %}
+        <div class="main-left text-center">
+            <div> <div class="label"> Type </div> <div class="value">{{ so.0.order.type }}  </div></div>
+
+           
+            <div> <div class="label"> Status </div> <div class="value">{{ so.0.order.status }}</div> </div>
+            <div> <div class="label"> Assignee </div> <div class="value">{{ so.0.order.owner }}</div> </div>
+        </div>
+        <div class="main-right text-ceneter">
+         <div> <div class="label"> Due  Date </div> <div class="value">{{ so.0.order.due_date }}</div></div>
+            <!-- <div> <div class="label"> Ordering Provider </div> <div class="value">{{ so.0.order.provider }} </div></div> -->
+            <!-- <div> <div class="label"> Ordering Facility </div> <div class="value">{{ so.0.order.facility }}</div></div> -->
+            <div> <div class="label"> Ordering Physician  </div> <div class="value">{{ so.0.order.physician_firstname }} {{ so.0.order.physician_lastname }}</div> </div>
+             <div> <div class="label">  Physician Contact  </div> <div class="value"> {{ so.0.order.physician_phone |cut:"None" }}</div> </div>
+        </div>
+
+    </div>
+    <div > <a href="#" onclick="show_more();" id="show_more"> Show More </a> </div>
+    <div class=" details-bottom" id="details-bottom">
+                      <div>  
+                            <div class="label"> Physician Phenotypes</div>
+                                 <div class="value"> {{ so.0.order.physician_phenotype|cut:"None" }} </div>
+                         </div>
+                        <div>  
+                            <div class="label"> Physician Genelist</div>
+                                 <div class="value"> {{ so.0.order.physician_genelist|cut:"None"  }} </div>
+                         </div>
+                            <div>  
+                            <div class="label"> Pertinent Negative</div>
+                                 <div class="value"> {{ so.0.order.pertinent_negative|cut:"None"  }} </div>
+                         </div>
+                          <div class="">
+                                <label class="label"> Phenotypes</label>
+                        <div class="value" > {{ so.0.order.phenotype }}</div>
+                     </div>
+
+                         <div>
+                         <div class="label"> Memo / Desc </div>
+                        <div class="value"> {{ so.0.order.desc }} </div>
+                        </div>
+  </div>
+
+ <div class="tabs top-buffer" id="tabs">
+            <ul>
+                <li><a href="#phenotypes" class="tab-menu" > Phenotypes  </a></li>
+                <li><a href="#genelist" class="tab-menu" >  genelist  </a></li>
+                 {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}    
+                <li><a href="#patient" class="tab-menu" >  Patient Info  </a></li>
+                 {% endif %}
+                <li><a href="#samples" class="tab-menu" >   Related Samples </a></li>
+                <li><a href="#analysis" class="tab-menu" >Related Analyses </a></li>
+
+            </ul>
+
+            <div class=" tab" id="phenotypes" >
+                      <div  class="sub-sub-title">  
+                 {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role %}            
+                             <a href="/order/{{ so.0.order_id }}/phenotypes/"><button class="btn btn-primary btn-sm right-button"> Add Phenotypes </button> </a> 
+
+                    {% endif %}
+                </div>
+                  
+            
+                        <table class="table table-bordered table-striped table-hover">
+                        <tr>
+                            <th> HPO ID </th>
+                            <th> Name </th>
+                        </tr>
+
+
+                         {% for plist in phenolists %}
+                        <tr >
+                            <td>{{plist.acc}}  </td>
+                            <td>
+
+                               {{plist.name}}
+                                        
+                               
+          
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+                        </table>
+                        {% if phenolists %}
+                 <div  class="clearfix"> 
+                   <a href="/order/{{ so.0.order_id }}/Diseases/">
+                        <button class="btn btn-primary btn-sm"> Associated Disease List By Score  </button> </a> 
+                    </div>
+                    {% endif %}
+            </div>
+                <div class="tab genelist" id="genelist">
+
+                <div  class="sub-sub-title">  
+                        {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
+                                 <a href="/PatientOrderGeneList/{{ so.0.order_id }}/"><button class="btn btn-primary btn-sm right-button"> Add Genelist </button> </a> 
+
+                        {% endif %}
+                    </div>
+                       
+
+
+                       <table class="table table-bordered table-striped table-hover">
+                        <tr>
+                            <th> Name </th>
+                            <th> Lists </th>
+                            <!-- <th> Memo</th> -->
+                        </tr>
+
+
+
+                              {% for glist in genelists %}
+                        <tr>
+                            <td class="name"> {{glist.genelist.name}}   </td>
+                            <td class="lists"> {{glist.genelist.list | truncatechars:100}}      </td>
+                            <!-- <td class="desc">{{glist.genelist.desc}}</td> -->
+                        </tr>
+
+                        {% endfor %}
+                        </table>
+
+                                            
+                                    
+            </div>
+                          {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}    
+            <div class="tab Patient" id="patient">
+                    <div  class="sub-sub-title"> 
+
+                     </div>
+                <table class="table table-bordered table-striped table-hover">
+                    <tr>
+                        <th> Patient  </th>
+                        <th> MRN </th>
+                        <th> DOB </th>
+                        <th> relation </th>
+                    </tr>
+                    {% for p in so %}
+                    <tr id='{{ o.id }}' class="list">
+
+                        <td><a href="/Patient/{{ p.patient.pid }}/">{{ p.patient.first_name }} {{ p.patient.last_name }}</a></td>
+                        <td>{{ p.patient.mrn }}</td>
+                        <td>{{ p.patient.dob }}</td>
+                        <td> {{ p.relation }}
+                               
+
+
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %} 
+            <div class="tab samples" id="samples">
+                            <div  class="sub-sub-title"> 
+                     </div>
+                <table class="table table-bordered table-striped table-hover">
+                    <tr>
+                        <th> Sample </th>
+                        <th> Container </th>
+                        <th> Source </th>
+                        <th> Patient ID </th>
+                    </tr>
+                    {% for s in so %}
+                    <tr id='{{ o.id }}' class="samplelist">
+
+                        <td><a href="/sample/{{ s.sample_id }}/">{{ s.sample.asn }}</a></td>
+                        <td>{{ s.container }}</td>
+                        <td>{{ s.sample.source }}</td>
+                        <td>
+                                {% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+                                                        <a href="/patient/{{ s.sample.patient_id }}"> {{ s.sample.patient_id }} </a>
+                                {% endif %} 
+
+
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div class="tab analysis" id="analysis">
+                           
+                <div class="sub-sub-title"></div> 
+                         <table class="table table-bordered table-striped table-hover">
+                        <tr>
+
+                            <th> Analysis ID </th>
+                            <th> Workflow ID </th>
+                            <th> Run Time </th>
+                            <th> Related Samples </th>
+                             <!-- <th> Result </th> -->
+
+                        </tr>
+                        <tr ng-repeat="wf in workflowList "  id='{$ wf.id $}' class="order">
+                            <td><a href="{{LOOMURL}}run-requests/{$ wf.analysisID $}/">{$ wf.analysisID $}</a></td>
+                            <td><a href="{{LOOMURL}}abstract-workflows/{$ wf.workflowID.split('@')[1] $}/">{$ wf.workflowID $}</a></td>
+                            <td>{$ wf.acc_time $}</td>
+                            <td>{$ wf.relSample $}</td>
+                             <!-- <td>{$ wf.loomResponse $}</td> -->
+                        </tr>
+                    </table>
+            </div>
+</div>
+
+
+
+    <div class="top-buffer ">
+        <div  class="sub-sub-title"> Related Orders Groups 
+                {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
+                         <a href="/order/groups/New/"><button class="btn btn-primary btn-sm  right-button"> New Order Group </button> </a> 
+
+                {% endif %}
+            </div>
+            <table class="table table-bordered table-striped table-hover">
+
+                 {% for g in groups %}
+                      {% ifchanged g.group_id %}
+                        <tr> 
+                            <td colspan="5">
+                            {% if g.run_result %}
+                                <button  class="button right-button" > Assay ID : {{ g.run_result }}  </button> 
+                            {% else %}
+                               <a onclick="run_cartagenia('{{g.group_id}}')"> <button  class="button right-button" > Run Cartagenia  </button> </a> 
+                            {% endif %}
+                                <a onclick="go_cartagenia()"> <button  class="button right-button" > Access Cartagenia  </button> </a> 
+                                
+                            
+                            </td>
+                        </tr>
+                       <tr>
+                            <th> Group ID </th>
+                            <th> Orders </th>
+                            <th>  affected </th>
+                            <th> Relations </th>
+                            <th> Patient ID </th>
+                           
+                      </tr>
+                        {% endifchanged %}
+                    <tr class="grouplist">
+
+                        <td>
+                        {% ifchanged g.group_id %}
+                            <a href="/order/groups/?gid={{ g.group_id }}">{{ g.group_id}}</a>
+                            <a href="/order/groups/Add/?gid={{ g.group_id }}" class="btn btn-default btn-sm  right-button"> Edit </a>
+
+                        {% endifchanged %}    
+                        </td>
+                        <td> <a href="/order/{{ g.order_id }}/"> {{ g.order_name }} </a> </td>
+
+                        <td> {{ g.status }} </td>
+                        <td>{{ g.rel_name }}</td>
+                        
+                        <td>
+    {% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+                            <a href="/patient/{{ g.patient_id }}/">{{ g.patient_id }} {{ g.patient.first_name }}  </a>
+    {% endif %}         
+                        </td>
+
+
+
+                    </tr>
+
+                    {% endfor %}
+            </table>
+            <!-- {% include "com/html_relation_tree.html" %} -->
+</div>
+<div class="clearfix"></div>
+
+
+
+
+
+
+</div>
+{% endblock content %}  
