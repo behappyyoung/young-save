@@ -5,10 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from users.models import UserMessage, UserProfile
 from .models import Samples, Orders, OrderStatus, SampleOrderRel, Patients, SampleContainer, OrderPhenoTypes, \
-    PatientOrderPhenoType, PatientOrderPhenoList, OrderGeneList, Notes, PeopleRelations, PatientRelations, \
+     OrderGeneList, Notes, PeopleRelations, PatientRelations, \
     Family, OrderGroups, PatientFiles, SampleFiles
 from .forms import OrderForm, OrderGeneListForm, NotesPatientForm, NotesOrderForm, PatientRelationsForm, \
-    PatientRelationsEditForm, FamilyForm, OrderGroupForm, PatientForm, PatientFilesForm
+    PatientRelationsEditForm, FamilyForm, OrderGroupForm, PatientForm, PatientFilesForm, SampleForm
 from mybackend.models import CustomSQL, PhenoTypeLists, GeneLists
 
 from mybackend import functions, LoadOntology
@@ -16,7 +16,7 @@ from logger.models import accessLog, loomLog, logging, orderlog, samplelog, log_
 import json, requests, os
 from gims import settings
 from django.contrib import messages
-from .forms import SampleOrderRelForm, PatientOrderPhenoTypeForm, PhenoTypesForm, GeneListsForm
+from .forms import SampleOrderRelForm, GeneListsForm
 from datetime import datetime
 from django.core.cache import cache
 from bson import json_util
@@ -25,6 +25,7 @@ from bson import json_util
 def custom_proc(request):
     return {
         'LOOMURL': settings.LOOMURL,
+        'SAMPLE_BUCKET_ROOT': settings.SAMPLE_BUCKET_ROOT,
     }
 
 
@@ -94,7 +95,7 @@ BASE_SAMPLEFILES_SQL='SELECT sf.*, s.asn as asn, o.order_name as ordername from 
 '''
 
 
-@login_required(login_url='/login/')
+@login_required()
 def samples_view(request):
     if 'username' in request.session:
         print(request.session.get('username'), request.session['username'])
@@ -104,8 +105,6 @@ def samples_view(request):
     c_samples = myc.my_custom_sql(SAMPLE_PATIENT_ORDER_SQL +' order by s.collection_date, s.asn; ')
     so = SampleOrderRel.objects.all()
     container = functions.getSampleContainer_list()
-    # container = SampleContainer.objects.all()
-    # container_json = serializers.serialize('json', container)
     title = 'Samples'
     logging(request, 'access')
     return render(request, 'tracker/samples.html',
@@ -113,17 +112,12 @@ def samples_view(request):
                    'sample_order': so, 'title': title})
 
 
-SAMPLE_WORKFLOWS_SQL = 'SELECT * from tracker_samples s join logger_loomlog l on s.asn = l.relSample '
-
-
-@login_required(login_url='/login/')
+@login_required()
 def sample_details(request, sid):
     if 'username' in request.session:
         print(request.session.get('username'), request.session['username'])
     else:
         return HttpResponseRedirect('/saml/?slo')
-    myc = CustomSQL()
-    c_samples = myc.my_custom_sql(SAMPLE_PATIENT_ORDER_SQL + ' WHERE s.id = "' + sid + '" order by s.asn; ')
     so = SampleOrderRel.objects.filter(sample_id=sid)
     if len(so) <= 0:
         message = "No Sample Matching ID : %s " % sid
@@ -131,16 +125,50 @@ def sample_details(request, sid):
         logging(request, '400')
         return HttpResponseRedirect('/samples/')
     asn = so[0].sample.asn
-    jsonstring_samples = json.dumps(c_samples, default=json_util.default)
-    # c_samplefiles = myc.my_custom_sql(BASE_SAMPLEFILES_SQL  + ' WHERE s.id = "' + sid + '" ')
     files = SampleFiles.objects.filter(sample_id=sid)
     c_loomlog = loomLog.objects.using('logs').filter(relSample = asn)
     jsonstring_loomlog = serializers.serialize('json', c_loomlog, fields=('analysisID', 'workflowID', 'relOrder', 'acc_time', 'loomResponse'))
     title = 'Sample : ' + asn
     logging(request, 'access')
-    return render(request, 'tracker/sample_details.html',
-                  {'samples':jsonstring_samples,'so':so,  'files': files, 'workflows': jsonstring_loomlog, 'title': title},
+    return render(request, 'tracker/samples/Details.html',
+                  {'so':so,  'files': files, 'workflows': jsonstring_loomlog, 'title': title},
                   context_instance=RequestContext(request, processors=[custom_proc]))
+
+
+@login_required(login_url='/saml/')
+def sample_edit(request, sid):
+    try:
+        c_sample = Samples.objects.get(id=sid)
+    except Samples.DoesNotExist:
+        message = 'Sample %s does not exist '%sid
+        messages.error(request, message)
+        return HttpResponseRedirect('/samples/')
+
+    if request.method == 'POST':
+        change = 'updated'
+        try:
+            if c_sample.note != request.POST['note']:
+                c_sample.note = request.POST['note']
+                change += ' Note / '
+            # if c_sample.desc != request.POST['desc']:
+            #     c_sample.desc = request.POST['desc']
+            #     change += ' description / '
+            if c_sample.volume != float(request.POST['volume']):
+                change += ' volume from %s to %s ' % (c_sample.volume, request.POST['volume'])
+                c_sample.volume = float(request.POST['volume'])
+            if change != 'updated':
+                messages.error(request, change)
+                c_sample.save()
+                samplelog(request, sid, change)
+        except:
+            message = 'Error : Could not update sample %s  ' % sid
+            messages.error(request, message)
+        return HttpResponseRedirect('/sample/'+sid+'/Edit/')
+    else:
+        form = SampleForm(instance=c_sample)
+    logging(request, 'access')
+    title = 'Edit Sample : %s'%c_sample.asn
+    return render(request, 'tracker/samples/Edit.html', {'form' : form, 'sid': sid, 'title':title})
 
 
 BASE_ORDER_SQL = 'SELECT *, o.id as orderid, up.title as ownername FROM tracker_orders o  ' \
@@ -151,18 +179,12 @@ BASE_ORDER_SQL = 'SELECT *, o.id as orderid, up.title as ownername FROM tracker_
                 'left join tracker_orderstatus os on o.status_id = os.id  ' \
                  'left join users_userprofile up on o.owner = up.user_id'
 
-# ORDER_PATIENT_SAMPLE_SQL = 'SELECT o.*, ot.*, os.*, up.*, s.asn as asn,  s.source as source, s.container as container, ' \
-#                            's.id as sampleid,  o.id as orderid, up.title as ownername FROM tracker_orders o  ' \
-#                  'left join tracker_patients p on o.patient_id = p.pid  ' \
-#                  'left join tracker_samples s on s.patient_id = p.pid ' \
-#                 ' left join tracker_ordertype ot on o.type_id = ot.id ' \
-#                 'left join tracker_orderstatus os on o.status_id = os.id  ' \
-#                  'left join users_userprofile up on o.owner_id = up.user_id'
 
 
-SIMPLE_ORDER_SQL = 'SELECT *, o.id as order_id FROM tracker_orders o ' \
+SIMPLE_ORDER_SQL = 'SELECT o.*, ot.*, os.*, u.*, p.first_name, p.last_name, p.mrn, o.id as order_id FROM tracker_orders o ' \
                 ' left join tracker_ordertype ot on o.type_id = ot.id ' \
                 'left join tracker_orderstatus os on o.status_id = os.id ' \
+                'LEFT JOIN tracker_patients p on p.pid = o.patient_id ' \
                 'LEFT JOIN users_userprofile u on u.id = o.owner_id'
 
 '''
@@ -170,27 +192,30 @@ SIMPLE_ORDER_SQL = 'SELECT *, o.id as order_id FROM tracker_orders o ' \
 '''
 
 
-@login_required(login_url='/saml/')
+@login_required( )
 def orders_view(request):
     if 'username' in request.session:
         print(request.session.get('username'), request.session['username'])
     else:
         return HttpResponseRedirect('/saml/?slo')
-    myc = CustomSQL()
-    mysql = SIMPLE_ORDER_SQL+'  order by o.flag desc, o.due_date; '
-    c_orders = myc.my_custom_sql(mysql)            # raw dict
+    # myc = CustomSQL()
+    # mysql = SIMPLE_ORDER_SQL+'  order by o.flag desc, o.due_date; '
+    # c_orders = myc.my_custom_sql(mysql)            # raw dict
+    # so = SampleOrderRel.objects.all()
+    c_orders = functions.getSO_List()
     logging(request, 'access')
-    return render(request, 'tracker/orders.html', {'orders':json.dumps(c_orders)})
+    return render(request, 'tracker/orders/Dash.html', {'orders':json.dumps(c_orders, default=json_util.default)})
 
 
 ORDER_GROUPS_SQL = 'SELECT * FROM tracker_ordergroups g ' \
              'LEFT JOIN tracker_orders o on g.order_id = o.id ' \
              'LEFT JOIN tracker_orderrelations r on g.relation_id = r.id ' \
+             ' LEFT JOIN tracker_patients p on o.patient_id = p.pid ' \
              ' LEFT JOIN  tracker_affectedstatus s on g.affectedstatus_id = s.id ' \
              'WHERE group_id in (SELECT group_id FROM tracker_ordergroups WHERE order_id = %s) ORDER BY group_id, order_id'
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def order_details(request, oid):
     if 'username' in request.session:
         print(request.session.get('username'), request.session['username'])
@@ -219,46 +244,74 @@ def order_details(request, oid):
     c_loomlog = loomLog.objects.using('logs').filter(relOrder=oname)
     jsonstring_loomlog = serializers.serialize('json', c_loomlog,
                                                fields=('analysisID', 'workflowID', 'relSample', 'acc_time', 'loomResponse'))
-    # order_group_ids = OrderGroups.objects.filter(order_id=oid)
-    order_groups = functions.doSQL(ORDER_GROUPS_SQL%oid)
+
+    # order_groups = functions.doSQL(ORDER_GROUPS_SQL%oid)
+    order_groups = OrderGroups.objects.filter(order_id=oid)
+    group_ids = []
+    main_order = False
+    for g in order_groups:
+        group_ids.append(g.group_id)
+
+    groups = OrderGroups.objects.filter(group_id__in=group_ids)
+    group_list = []
+    for og in groups:
+        if int(og.order_id) == int(oid) and og.relation.rel_name == 'Proband':
+            main_order = 'main_order'
+        c_so = SampleOrderRel.objects.get(order_id=og.order_id, relation_id=1)
+        group_list.append({'group_id': og.group_id, 'order_id': og.order_id, 'order_name': og.order.order_name,
+                           'status': og.affectedstatus, 'pname': c_so.patient.name(), 'mrn': c_so.patient.mrn,
+                           'pid': c_so.patient.pid, 'run_result': og.run_result,
+                           'sex': c_so.patient.sex, 'dob': c_so.patient.dob, 'relation': og.relation.rel_name})
     title = 'Order : ' + oname
     logging(request, 'access', title)
     return render(request, 'tracker/orders/Details.html',
-                  {'so': so, 'groups': order_groups,  'phenolists' : c_phenolist, 'workflows': jsonstring_loomlog, 'genelists':genelist, 'title': title},
+                  {'so': so, 'groups': group_list,  'phenolists' : c_phenolist, 'workflows': jsonstring_loomlog,
+                   'genelists': genelist, 'title': title, 'main_order': main_order},
                   context_instance=RequestContext(request, processors=[custom_proc]))
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def order_edit(request, oid):
     if request.method == 'POST':
         change = 'updated'
         c_order = Orders.objects.get(id=oid)
         if c_order.phenotype != request.POST['phenotype']:
             c_order.phenotype = request.POST['phenotype']
-            change += ' phenotype / '
+            # change += ' phenotype / '
+        if c_order.secondary_findings_note != request.POST['secondary_findings_note']:
+            c_order.secondary_findings_note = request.POST['secondary_findings_note']
+            # change += ' secondary_findings_note / '
+        if c_order.genelist != request.POST['genelist']:
+            c_order.genelist = request.POST['genelist']
+            # change += ' genelist / '
         if c_order.physician_phone != request.POST['physician_phone']:
                 c_order.physician_phone = request.POST['physician_phone']
-                change += ' physician contact info / '
+                # change += ' physician contact info / '
         if c_order.owner_id != request.POST['owner']:
             prev = c_order.owner or '  '
             userprofile = UserProfile.objects.get(id=request.POST['owner'])
-            change += ' ownership / From ' + str(prev) + ' To ' + userprofile.username
+            change += ' Ownership  From ' + str(prev) + ' To ' + userprofile.username
             c_order.owner_id = request.POST['owner']
         if str(c_order.status_id) != str(request.POST['status']):
             new_status = getOrderStatus(request.POST['status'])
-            change += ' Status / From ' + str(c_order.status) + ' To ' + new_status
+            change += ' / Status  From ' + str(c_order.status) + ' To ' + new_status
             OrderProcessingLog(order_id=oid, order_name=c_order.order_name, prev_time=c_order.updated,
                     order_type=c_order.type, prev_status=str(c_order.status), update_status=new_status).log()
             c_order.status_id = request.POST['status']
+        if c_order.overall_result != request.POST.get('overall_result'):
+            c_order.overall_result_id = request.POST.get('overall_result')
+            # change += ' Overall Result / '
         if c_order.desc != request.POST['desc']:
             c_order.desc = request.POST['desc']
-            change += ' description / '
+            # change += ' description / '
+        if request.POST.get('secondary_findings_flag') != c_order.secondary_findings_flag:
+            c_order.secondary_findings_flag = request.POST.get('secondary_findings_flag')
         if c_order.flag != request.POST['flag']:
             c_order.flag = request.POST['flag']
             if c_order.flag =='':
-                change += ' Removed Flag '
+                change += ' / Removed Flag '
             else:
-                change += ' Added Flag - ' + c_order.flag
+                change += ' / Added Flag - ' + c_order.flag
         if change != 'updated':
             c_order.save()
             orderlog(request, oid, c_order.order_name, change)
@@ -268,26 +321,26 @@ def order_edit(request, oid):
         # order.lab_status = order.get_lab_status_display()
         form = OrderForm(instance=order)
     logging(request, 'access')
-    return render(request, 'tracker/EditOrder.html', {'form' : form, 'oid': oid})
+    return render(request, 'tracker/orders/Edit.html', {'form' : form, 'oid': oid})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def order_notes(request, oid):
     if request.method == 'POST':
         form = NotesOrderForm(request.POST)
         if form.is_valid():
-            recipients = request.POST.getlist('recipients')
+            # recipients = request.POST.getlist('recipients')      # removed recipient for now
             obj = form.save(commit=False)
             obj.order_id = oid
             obj.writer=request.user
-            obj.recipients = ','.join(recipients)
+            # obj.recipients = ','.join(recipients)
             obj.save()
             order_name = getOrderInfo(oid, 'order_name')
             orderlog(request, oid, order_name, 'new note added ')
-            for recipient in recipients:
-                message = UserMessage( user_id=recipient, related_order_id = oid,
-                                       related_note_id = obj.id, message = 'new note on ' + order_name , sender = request.user)
-                message.save()
+            # for recipient in recipients:
+            #     message = UserMessage( user_id=recipient, related_order_id = oid,
+            #                            related_note_id = obj.id, message = 'new note on ' + order_name , sender = request.user)
+            #     message.save()
         notes = Notes.objects.filter(order_id=oid).order_by('-update_time')
     else:
         try:
@@ -296,13 +349,52 @@ def order_notes(request, oid):
             notes=[]
     if len(notes) == 0:
         notes = [{'id': ' --', 'update_time': ' -- ', 'category': ' -- ', 'note': 'no note'}]
-    pid = getOrderInfo(oid, 'patient_id')
-    form = NotesOrderForm(initial={'order': oid, 'patient_id':pid})
+    so = SampleOrderRel.objects.get(order_id=oid)
+    # pid = getOrderInfo(oid, 'patient_id')
+    pid = SampleOrderRel.objects.filter(order_id=oid).values('patient_id')[0].get('patient_id')
+    form = NotesOrderForm(initial={'order': oid, 'patient':pid})
     logging(request, 'access')
     return render(request, 'tracker/orders/Order_Notes.html', {'form' : form, 'oid': oid, 'notes':notes})
 
 
-@login_required(login_url='/saml/')
+@login_required()
+def order_note_action(request, oid, nid):
+    try:
+        c_note = Notes.objects.get(id=nid, order_id=oid)
+    except:
+        messages.error(request, ' Cannot find Note  : %s' % nid)
+        return HttpResponseRedirect('/order/'+oid+'/Notes/')
+
+    if request.method == 'POST':
+        form = NotesOrderForm(request.POST)
+
+        if request.POST.get('action') == 'Delete':
+            c_note.delete()
+            messages.error(request, 'Note %s is Deleted ' % nid)
+            message = 'Done'
+            return HttpResponse(message)
+        else:
+            if form.is_valid():
+                c_note.writer = request.user
+                c_note.category_id = request.POST.get('category')
+                c_note.note = request.POST.get('note')
+                c_note.save()
+                order_name = getOrderInfo(oid, 'order_name')
+                orderlog(request, oid, order_name, ' note edited ')
+
+    try:
+        notes = Notes.objects.filter(order_id = oid).order_by('-update_time')
+    except:
+        notes = [{'id': ' --', 'update_time': ' -- ', 'category': ' -- ', 'note': 'no note'}]
+
+    form = NotesOrderForm(initial={'order': oid, 'patient': c_note.patient, 'note': c_note.note,
+                                   'category': c_note.category})
+    logging(request, 'access')
+    return render(request, 'tracker/orders/Order_Note_Edit.html', {'form': form, 'oid': oid,
+                                                                   'notes': notes, 'note': c_note, 'nid': nid})
+
+
+@login_required()
 def order_groups(request):
     gid = None
     oid = None
@@ -318,7 +410,7 @@ def order_groups(request):
     return render(request, 'tracker/orders/Order_Groups.html', {'groups': groups, 'gid' : gid, 'oid' : oid})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def ordergroup_action(request, action):
     if request.method == 'POST':
         form = OrderGroupForm(request.POST)
@@ -362,7 +454,7 @@ def ordergroup_action(request, action):
 '''
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def patients(request):
     if 'username' in request.session:
         print(request.session.get('username'), request.session['username'])
@@ -380,7 +472,7 @@ def patients(request):
     return render(request, 'tracker/patients.html', {'patients':jsonstring_patients.replace("'","\\'"), 'family':family})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def patient_edit(request, pid):
     if 'username' in request.session:
         print(request.session.get('username'), request.session['username'])
@@ -406,9 +498,13 @@ def patient_edit(request, pid):
         if patient.last_name != request.POST['last_name']:
                 patient.last_name = request.POST['last_name']
                 change += ' last name / '
-        if patient.ethnicity != request.POST['ethnicity']:
-            change += ' ownership / From ' + patient.ethnicity + ' To ' + request.POST['ethnicity']
-            patient.ethnicity = request.POST['ethnicity']
+        if patient.ethnicity:
+            if patient.ethnicity != request.POST.get('ethnicity'):
+                change += ' change Ownership From ' + patient.ethnicity + ' To ' + request.POST.get('ethnicity') + ' / '
+                patient.ethnicity = request.POST.get('ethnicity')
+        elif request.POST.get('ethnicity') != '':
+            change += ' Ownership To ' + request.POST.get('ethnicity') + ' / '
+            patient.ethnicity = request.POST.get('ethnicity')
         if patient.memo != request.POST['memo']:
             patient.memo = request.POST['memo']
             change += ' memo / '
@@ -424,45 +520,104 @@ def patient_edit(request, pid):
     return render(request, 'tracker/Edit_Patient.html', {'form' : form, 'pid': pid})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def patient_notes(request, pid):
-    p_info = functions.getPatientInfo(pid, ['first_name', 'last_name', 'mrn'])
-    p_name = p_info['first_name']+' '+p_info['last_name']+'('+ p_info['mrn']+')'
+    p_info = functions.getPatientInfo(pid, ['first_name', 'last_name', 'mrn', 'id'])
+    if len(p_info) == 0:
+        message = " No Patient Info :  %s" % pid
+        messages.error(request, message)
+        return HttpResponseRedirect('/patients/')
+
+    p_name = p_info['first_name'] + ' ' + p_info['last_name'] + ' ( ' + p_info['mrn'] + ' )'
     if request.method == 'POST':
         form = NotesPatientForm(request.POST)
         if form.is_valid():
             obj = form.save(commit=False)
-            recipients = request.POST.getlist('recipients')
-            obj.patient_id = pid
+            # recipients = request.POST.getlist('recipients')
+            # obj.patient_id = pid
             obj.writer = request.user
-            obj.recipients = ','.join(recipients)
+            # obj.recipients = ','.join(recipients)
             obj.save()
             pname = functions.getPatientInfo(pid, ['first_name', 'last_name'])
             log_history(request, 'patient', pid, pname['first_name'] +'  '+ pname['last_name'], 'new note added ')
-            for recipient in recipients:
-                message = UserMessage( user_id=recipient, related_note_id = obj.id,
-                                       message = 'new note on ' + p_name , sender = request.user)
-                message.save()
-        notes = Notes.objects.filter(patient_id=pid).order_by('-update_time', 'order_id')
+            # for recipient in recipients:
+            #     message = UserMessage( user_id=recipient, related_note_id = obj.id,
+            #                            message = 'new note on ' + p_name , sender = request.user)
+            #     message.save()
+
+        notes = Notes.objects.filter(patient_id=p_info['id']).order_by('-update_time', 'order_id')
     else:
         try:
-            notes = Notes.objects.filter(patient_id = pid).order_by('-update_time', 'order_id')
+            notes = Notes.objects.filter(patient_id = p_info['id']).order_by('-update_time', 'order_id')
         except :
             notes=[]
     if len(notes) == 0:
         notes = [{'id': ' --', 'update_time': ' -- ', 'category': ' -- ', 'note': 'no note'}]
-    form = NotesPatientForm(initial={'patient_id':pid})
+    form = NotesPatientForm(initial={'patient':p_info['id']})
+    so_list = SampleOrderRel.objects.filter(patient_id=p_info['id'])
     logging(request, 'access')
-    return render(request, 'tracker/Patient_Notes.html', {'form' : form, 'pid': pid, 'notes':notes, 'p_name': p_name})
+    return render(request, 'tracker/patient/Notes.html', {'form' : form, 'pid': pid, 'notes':notes, 'p_name': p_name, 'so_list': so_list})
+
+
+@login_required()
+def patient_note_action(request, pid, nid):
+    p_info = functions.getPatientInfo(pid, ['first_name', 'last_name', 'mrn', 'id'])
+    if len(p_info) == 0:
+        message = " No Patient Info :  %s" % pid
+        messages.error(request, message)
+        return HttpResponseRedirect('/patients/')
+
+    p_name = p_info['first_name'] + ' ' + p_info['last_name'] + ' ( ' + p_info['mrn'] + ' )'
+    try:
+        c_note = Notes.objects.get(id=nid, patient_id=p_info['id'])
+    except Notes.DoesNotExist:
+        messages.error(request, ' Cannot find Note  : %s' % nid)
+        return HttpResponseRedirect('/patients/%s/Notes/' % pid)
+    if request.method == 'POST':
+        form = NotesPatientForm(request.POST)
+
+        if request.POST.get('action') == 'Delete':
+            c_note.delete()
+            messages.error(request, 'Note [ %s ] was Deleted ' % nid)
+            message = 'Done'
+            pname = functions.getPatientInfo(pid, ['first_name', 'last_name'])
+            log_history(request, 'patient', pid, pname['first_name'] + ' ' + pname['last_name']
+                        , 'note ( ' + nid + ' ) deleted ')
+            return HttpResponse(message)
+        else:
+            if form.is_valid():
+                c_note.writer = request.user
+                c_note.category_id = request.POST.get('category')
+                c_note.note = request.POST.get('note')
+                c_note.save()
+                pname = functions.getPatientInfo(pid, ['first_name', 'last_name'])
+                messages.error(request, 'Note [ %s ] Updated ' % nid)
+                log_history(request, 'patient', pid, pname['first_name'] + ' ' + pname['last_name']
+                            , 'note ( ' + nid + ' ) updated ')
+
+        notes = Notes.objects.filter(patient_id=p_info['id']).order_by('-update_time', 'order_id')
+    else:
+        try:
+            notes = Notes.objects.filter(patient_id = p_info['id']).order_by('-update_time', 'order_id')
+        except :
+            notes=[]
+    action = 'Edit'
+    if len(notes) == 0:
+        notes = [{'id': ' --', 'update_time': ' -- ', 'category': ' -- ', 'note': 'no note'}]
+    form = NotesPatientForm(initial={'patient': p_info['id'], 'category': c_note.category, 'order': c_note.order_id
+        , 'note': c_note.note})
+    logging(request, 'access')
+    return render(request, 'tracker/patient/Notes.html', {'form': form, 'pid': pid
+        , 'notes':notes, 'p_name': p_name,'nid': nid, 'action': action})
 
 
 FAMILY_SQL = 'SELECT * FROM tracker_family f ' \
              'LEFT JOIN tracker_patients p on f.patient_id = p.id left JOIN tracker_familyrole r on f.role_id = r.id ' \
              ' LEFT JOIN tracker_affectedstatus s on f.affectedstatus_id = s.id ' \
-             'WHERE family_id in (SELECT family_id FROM tracker_family WHERE patient_id = %s) ORDER BY family_id'
+             'WHERE family_id in (SELECT family_id FROM tracker_family WHERE patient_id = %s) ORDER BY family_id, r.id'
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def patient_files(request, pid):
     patient = Patients.objects.get(pid = pid)
     try:
@@ -472,7 +627,7 @@ def patient_files(request, pid):
     return render(request, 'tracker/patient/Files.html', {'p_files':p_files, 'patient':patient} )
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def patient_files_action(request, pid, action):
     if 'username' in request.session:
         if 'interpretation' not in request.session.get('role').lower() and 'manager' not in request.session.get(
@@ -500,7 +655,7 @@ def patient_files_action(request, pid, action):
 
             if action == 'Add':
                 if f:
-                    path  = functions.handle_uploaded_file(f, 'Patient', pid, f_name)
+                    path  = functions.handle_uploaded_file(f, 'Patient', pid, f_name, settings.PATIENT_BUCKET_ROOT)
                     obj = form.save(commit=False)
                     obj.file_path = path
                     obj.file_name = f_name
@@ -518,7 +673,7 @@ def patient_files_action(request, pid, action):
                     obj.desc = request.POST['desc']
                     obj.type = request.POST['type']
                     if f:
-                        path = functions.handle_uploaded_file(f, 'Patient', pid, f_name)
+                        path = functions.handle_uploaded_file(f, 'Patient', pid, f_name, settings.PATIENT_BUCKET_ROOT)
                         obj.file_path = path
                         obj.file_name = f_name
                         obj.url = settings.GCLOUD_URL_ROOT + path
@@ -547,7 +702,7 @@ def patient_files_action(request, pid, action):
 
 
 # patient details page
-@login_required(login_url='/saml/')
+@login_required()
 def patient_details(request, pid):
     if 'username' in request.session:
         if 'interpretation' not in request.session.get('role').lower() and 'manager' not in request.session.get(
@@ -573,9 +728,9 @@ def patient_details(request, pid):
     pids = [pid]
     for s in selfs:
         pids.append(s['relative'])
-    samples = Samples.objects.filter(patient_id__in=pids).order_by('asn')
-    orders = Orders.objects.filter(patient_id__in=pids)
-    so = SampleOrderRel.objects.filter(patient_id=patient.id)
+    # samples = Samples.objects.filter(patient_id__in=pids).order_by('asn')
+    # orders = Orders.objects.filter(patient_id__in=pids)
+    so = SampleOrderRel.objects.filter(patient_id=patient.id).select_related('order', 'sample')
     ped_file = None
     try:
         files = PatientFiles.objects.filter(patient_id=patient.id)
@@ -595,8 +750,8 @@ def patient_details(request, pid):
         messages.error(request, e.message)
 
     oids=[]
-    for order in orders:
-        oids.append(int(order.id))
+    for o in so:
+        oids.append(int(o.order.id))
 
     if len(oids)>0:
         phenotypes = OrderPhenoTypes.objects.filter(order_id__in=oids)
@@ -604,12 +759,12 @@ def patient_details(request, pid):
         phenotypes =[]
     title = 'Patient : ' + pid
     logging(request, 'access', title)
-    return render(request, 'tracker/patient/Details.html', {'patient':patient, 'samples':samples, 'ped_file': ped_file,
+    return render(request, 'tracker/patient/Details.html', {'patient':patient, 'ped_file': ped_file,
             'family': family, 'phenotypes': phenotypes,
-            'so':so,  'orders':orders, 'relative': relative_list, 'p_files': files, 'title': title})
+            'so':so, 'relative': relative_list, 'p_files': files, 'title': title})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def patient_relationship(request, pid):
 
     if request.method == 'POST':
@@ -681,7 +836,7 @@ def patient_relationship(request, pid):
     return render(request, 'tracker/Patient_Relationship.html', {'form':form, 'pid': pid, 'action': action})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def patient_family(request, pid):
     patients = Patients.objects.get(pid = pid)
     fid = "F_1"  # default family id
@@ -718,7 +873,7 @@ def patient_family(request, pid):
                   {'form': form, 'pid': pid, 'action': action, 'messages': messages, 'family': family })
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def families(request):
     fid = None
     pid = None
@@ -734,7 +889,7 @@ def families(request):
     return render(request, 'tracker/Families.html', {'family': family, 'fid' : fid, 'pid' : pid})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def families_action(request, action):
     if request.method == 'POST':
         form = FamilyForm(request.POST)
@@ -772,6 +927,10 @@ def families_action(request, action):
             return HttpResponseRedirect('/families/Add/?fid=%s'%fid)
         else:
             action = request.POST['action']
+            fid = request.GET.get('fid')
+            pid = request.GET.get('pid')
+            family = Family.objects.filter(family_id=fid)
+            form = FamilyForm(initial={'family_id': fid, 'patient': pid})
     else:
         if action == 'New':      # create new family group
             try:
@@ -785,13 +944,18 @@ def families_action(request, action):
             fid = request.GET.get('fid')
             pid = request.GET.get('pid')
 
-        family = Family.objects.filter(family_id=fid)
+            family = Family.objects.filter(family_id=fid)
+            if len(family) < 1:
+                messages.error(request, ' Could not find Family Group ')
+                return HttpResponseRedirect('/families/')
+
         form = FamilyForm(initial={'family_id': fid, 'patient': pid})
     return render(request, 'tracker/Patient_Family.html',
                   {'form': form, 'action': action, 'family': family})
 
+
 # patient pedigree chart
-@login_required(login_url='/saml/')
+@login_required()
 def patient_pedigree(request, pid):
     if 'username' in request.session:
         print(request.session.get('username'), request.session['username'])
@@ -812,7 +976,7 @@ def patient_pedigree(request, pid):
     return render(request, 'tracker/patient_pedigree.html', {'patient': patient, 'pedigree': json.dumps(pedigree)})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def add_SampleOrderRel(request):
     if request.method == 'POST':
         form = SampleOrderRelForm(request.POST)
@@ -857,7 +1021,7 @@ def add_SampleOrderRel(request):
     return render(request, 'tracker/SampleOrderRel.html', {'form': form, 'action':action })
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def add_patient_order_phenopype(request, oid):
     if request.method == 'POST':
 
@@ -889,7 +1053,7 @@ def add_patient_order_phenopype(request, oid):
     return render(request, 'tracker/PatientOrderPhenoType.html', {'phenolists': phenolists, 'c_list':c_list,  'action':action, 'order':order })
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def order_phenopypes(request, oid):
     try:
         c_phenolists = OrderPhenoTypes.objects.filter(order_id=oid).order_by('acc')
@@ -901,7 +1065,7 @@ def order_phenopypes(request, oid):
     return render(request, 'tracker/OrderPhenoTypes.html', {'phenolists': c_phenolists, 'order': order})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def order_sortedDisease(request, oid):
     order = Orders.objects.get(id=oid)
     try:
@@ -951,7 +1115,7 @@ def order_sortedDisease(request, oid):
     return render(request, 'tracker/OrderSortedDiseases.html', {'phenolists': c_phenolists, 'order': order, 'sortedlists': newList})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def add_order_phenopype(request, oid):
     if request.method == 'POST':
         try:
@@ -966,7 +1130,7 @@ def add_order_phenopype(request, oid):
         return HttpResponse('error')
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def edit_order_phenopype(request, oid):
     if request.method == 'POST':
         try:
@@ -980,7 +1144,7 @@ def edit_order_phenopype(request, oid):
         return HttpResponse('error')
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def phenotype_omim(request, acc):
     omim_data = functions.getOmimData(acc)
     return render(request, 'tracker/PhenoType_OMIM.html', {'omim_data': omim_data['entry']})
@@ -996,7 +1160,7 @@ def getHsa(hsalist, gid):
                 return line_data[0]
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def phenotype_kegg(request, gid):
     url = 'http://rest.kegg.jp/find/genes/hsa+'+gid
 
@@ -1034,7 +1198,7 @@ def phenotype_kegg(request, gid):
     return render(request, 'tracker/PhenoType_KEGG.html', {'gene':gid, 'pathwayHtml': pathwayHtml, 'htmlList': pathwayHtmlList, 'imagename': pathwayID})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def phenotype_hpo(request, acc):
     tid = str(functions.getTermID('acc', acc))
     details = functions.getTermDetails(tid)
@@ -1047,7 +1211,7 @@ def phenotype_hpo(request, acc):
     return render(request, 'tracker/PhenoType.html', {'details':details, 'disease': disease, 'acc':acc, 'dblist': dblist})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def phenotype_graph(request, acc):
     tid = str(functions.getTermID('acc', acc))
     details = functions.getTermDetails(tid)
@@ -1056,7 +1220,7 @@ def phenotype_graph(request, acc):
     return render(request, 'tracker/PhenoType_Graph.html', {'details':details, 'relations': json.dumps(relations), 'acc':acc})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def genelists(request):
     c_genelists = GeneLists.objects.select_related('category').order_by('category', 'name')
     newlist = []
@@ -1066,7 +1230,7 @@ def genelists(request):
     return render(request, 'tracker/GeneLists.html', {'genelists': json.dumps(newlist)})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def edit_genelist(request):
     if request.method == 'POST':
         form = GeneListsForm(request.POST)
@@ -1097,7 +1261,7 @@ def edit_genelist(request):
     return render(request, 'tracker/EditGeneList.html', {'form': form, 'action':action, 'gid':gid})
 
 
-@login_required(login_url='/saml/')
+@login_required()
 def add_patient_order_genelist(request, oid):
     if request.method == 'POST':
         form = OrderGeneListForm(request.POST)
@@ -1125,20 +1289,20 @@ def add_patient_order_genelist(request, oid):
     logging(request, 'access')
     return render(request, 'tracker/PatientOrderGeneList.html', {'genelists': genelist,'form': form, 'order':order })
 
-
-@login_required(login_url='/saml/')
-def edit_patient_order_phenopype(request, pid):
-    if request.method == 'POST':
-        form = PatientOrderPhenoTypeForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect('/order/'+str(form.cleaned_data['order'].id) + '/')
-
-    else:
-        c_phenotype = PatientOrderPhenoType.objects.get(id=pid)
-        form = PatientOrderPhenoTypeForm(instance=c_phenotype)
-    logging(request, 'access')
-    return render(request, 'tracker/PatientOrderPhenoType.html', {'form': form , 'action': 'edit' })
+#
+# @login_required()
+# def edit_patient_order_phenopype(request, pid):
+#     if request.method == 'POST':
+#         form = PatientOrderPhenoTypeForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return HttpResponseRedirect('/order/'+str(form.cleaned_data['order'].id) + '/')
+#
+#     else:
+#         c_phenotype = PatientOrderPhenoType.objects.get(id=pid)
+#         form = PatientOrderPhenoTypeForm(instance=c_phenotype)
+#     logging(request, 'access')
+#     return render(request, 'tracker/PatientOrderPhenoType.html', {'form': form , 'action': 'edit' })
 
 
 
@@ -1158,14 +1322,14 @@ def edit_patient_order_phenopype(request, pid):
 #
 #
 # #################################
-# @login_required(login_url='/saml/')
+# @login_required()
 # def phenotypes(request):
 #     c_phenotypes = PhenoTypes.objects.all().order_by('name')
 #     jsonstring_phenotypes = serializers.serialize('json', c_phenotypes)
 #     return render(request, 'tracker/PhenoTypes.html', {'phenotypes': jsonstring_phenotypes})
 
 #
-# @login_required(login_url='/saml/')
+# @login_required()
 # def add_phenotype(request):
 #     if request.method == 'POST':
 #         form = PhenoTypesForm(request.POST, request.FILES)

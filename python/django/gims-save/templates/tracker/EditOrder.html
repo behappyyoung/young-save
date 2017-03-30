@@ -20,6 +20,7 @@
 	form label[for='id_desc'], form label[for='id_phenotype'],form label[for='id_physician_phenotype'],form label[for='id_physician_genelist'], form label[for='id_pertinent_negative']{
         display: block;
     }
+    
 	form input[type="radio"] {
 		width: 20px;
 	}
@@ -42,6 +43,8 @@ jQuery(document).ready(function() {
 			$('input#id_flag').val('Flag Message :');
 		}
 	})
+
+	
 });
 </script>
  <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" />  Order : {{form.instance.order_name}} </div>

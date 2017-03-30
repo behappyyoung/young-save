@@ -25,17 +25,44 @@
 }
 
 .flag{
-    width: 100%;
+    width: 98%;
     background-color: red;
     color : white;
+    margin-bottom: 5px;
 }
 .tab-menu{
     text-transform: capitalize;
 }
 #details-bottom{
-    display: none;
+    /*display: none;*/
 }
-
+.main_order{
+    background-color: #0cff40;
+    position: fixed;
+    left: 0;
+    top: 0;
+    opacity: 0.2;
+    width: 100%;
+    height: 100%;
+    z-index: -99;
+}
+/*.False{
+    background-color: gray;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0.2;
+    width: 100%;
+    height: 100%;
+    z-index: -99;
+}*/
+.grouplist.self {
+    border: solid 2px green;
+}
+.grouplist.self .relation, .Proband .relation,#details-bottom .secondary_findings_flag .value, #details-bottom .secondary_findings_flag .label{
+    font-weight: bolder;
+    color:red;
+}
 </style>
 
 <script type="text/javascript">
@@ -96,7 +123,7 @@ if(window.location.hostname =='gims-dev.shc.org'){
             url:'/mybackend/get_notes/',
             type:'json',
             method:'POST',
-            data:{'oid':  {{so.0.order_id}} },
+            data:{'pid':  '{{so.0.patient.id}}' },
             error: function()
             {
                  console.log('error');
@@ -104,17 +131,30 @@ if(window.location.hostname =='gims-dev.shc.org'){
             success: function(data)
             {   
                 var json_data = JSON.parse(data);
-                console.log('success', data, json_data);
-                window.json_data = json_data;
-                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> date </th><th> category </th><th> Note </th><th> Author </th></thead><tbody>';
+                // console.log('success', data, json_data);
+                // window.json_data = json_data;
+                // var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> date </th><th> category </th><th> Note </th><th> Author </th></thead><tbody>';
+                // var urgent='';
+                // var recipients='';
+                // var writer='';
+                // for(var i=0; i<json_data.length; i++){
+                //     urgent = (json_data[i].category.trim() == 'Urgent Matter')? 'danger' : '';
+                //     recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null )? '' : json_data[i].recipients;
+                //     writer = (typeof json_data[i].writer ==='undefined' || json_data[i].writer === null )? '' : json_data[i].writer;
+                //     hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="date">'+json_data[i].update_time+
+                //     '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+writer+'</td></tr>';
+                // }
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> Order Name</th><th> date </th><th> category </th><th> Note </th><th> Author </th></thead><tbody>';
                 var urgent='';
-                var recipients='';
-                var writer='';
+                var recipients;
+                var writer;
+                var order_name;
                 for(var i=0; i<json_data.length; i++){
                     urgent = (json_data[i].category.trim() == 'Urgent Matter')? 'danger' : '';
-                    recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null )? '' : json_data[i].recipients;
+                    // recipients = (typeof json_data[i].recipients ==='undefined' || json_data[i].recipients === null)? '' : json_data[i].recipients;
                     writer = (typeof json_data[i].writer ==='undefined' || json_data[i].writer === null )? '' : json_data[i].writer;
-                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="date">'+json_data[i].update_time+
+                     order_name = (typeof json_data[i].order_name ==='undefined' || json_data[i].order_name === null )? ' -- ' : json_data[i].order_name;
+                    hHtml += '<tr class="note-detail '+urgent+'" id="'+json_data[i].id+'"><td class="order_name">'+order_name+'</td><td class="date">'+json_data[i].update_time+
                     '</td><td>'+json_data[i].category+'</td><td>'+json_data[i].note+'</td><td>'+writer+'</td></tr>';
                 }
                 $('#popup').html(hHtml);
@@ -166,13 +206,70 @@ function run_cartagenia(group_id){
             {
                 //file exists
                 
-                var json_data = JSON.parse(data);
-                console.log('success', data, json_data);
+                var json_response = JSON.parse(data);
+                if(json_response.Error){
+                    user_message('error', json_response.Message);
+                }else{
+                    user_message('status', json_response.Message, true);
+                }
 
 
             }
          });
 }
+function check_status(mrn){
+    $.ajax({
+            url:'/mybackend/checkstatus_cartagenia/'+mrn+'/',
+            type:'json',
+            method:'GET',
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_response = JSON.parse(data);
+                if(json_response.Error){
+                    user_message('error', json_response.Message);
+                }else{
+                    user_message(json_response.Message, json_response.Analyses[0].status);
+                }
+
+
+            }
+         });
+}
+
+function save_report(sid, pid){
+    $.ajax({
+            url:'/mybackend/getreport_cartagenia/',
+            type:'json',
+            method:'POST',
+            data: {'sid': sid, 'pid': pid},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_response = JSON.parse(data);
+                if(json_response.Error){
+                    user_message('error', json_response.Message);
+                }else{
+                    user_message(json_response.Message, 'Saved in Epic Outgoing Message Table');
+                }
+
+
+            }
+         });
+}
+
 
 function show_more() {
     $('#details-bottom').toggle();
@@ -184,7 +281,8 @@ function show_more() {
 }
 
 </script>
-
+<div class="{{main_order}}">
+</div>
 <div ng-controller="trackerController" class="tracker orders details">
 
 
@@ -211,10 +309,20 @@ function show_more() {
              <div class="flag  text-center">  {{ so.0.order.flag }}  </div> 
         {% endif %}
         <div class="main-left text-center">
-            <div> <div class="label"> Type </div> <div class="value">{{ so.0.order.type }}  </div></div>
+            <div> <div class="label"> Type </div> <div class="value">{{ so.0.order.type.type_name }}  </div></div>
 
            
-            <div> <div class="label"> Status </div> <div class="value">{{ so.0.order.status }}</div> </div>
+            <div> 
+                    <div class="label"> Status </div>
+                 <div class="value">{{ so.0.order.status }} 
+            </div>
+            {% if so.0.order.overall_result %}
+            <div> 
+                    <div class="label"> Overall Result </div>
+                 <div class="value">{{ so.0.order.overall_result|cut:"None" }} </div>
+            </div>
+            {% endif %} 
+            </div>
             <div> <div class="label"> Assignee </div> <div class="value">{{ so.0.order.owner }}</div> </div>
         </div>
         <div class="main-right text-ceneter">
@@ -223,46 +331,58 @@ function show_more() {
             <!-- <div> <div class="label"> Ordering Facility </div> <div class="value">{{ so.0.order.facility }}</div></div> -->
             <div> <div class="label"> Ordering Physician  </div> <div class="value">{{ so.0.order.physician_firstname }} {{ so.0.order.physician_lastname }}</div> </div>
              <div> <div class="label">  Physician Contact  </div> <div class="value"> {{ so.0.order.physician_phone |cut:"None" }}</div> </div>
+             {% if so.0.order.overall_result %}
+            <div> 
+                    <div class="label">  </div>
+                 <div class="value">  </div>
+            </div>
+            {% endif %} 
         </div>
 
     </div>
-    <div > <a href="#" onclick="show_more();" id="show_more"> Show More </a> </div>
-    <div class=" details-bottom" id="details-bottom">
-                      <div>  
-                            <div class="label"> Physician Phenotypes</div>
-                                 <div class="value"> {{ so.0.order.physician_phenotype|cut:"None" }} </div>
-                         </div>
-                        <div>  
-                            <div class="label"> Physician Genelist</div>
-                                 <div class="value"> {{ so.0.order.physician_genelist|cut:"None"  }} </div>
-                         </div>
-                            <div>  
-                            <div class="label"> Pertinent Negative</div>
-                                 <div class="value"> {{ so.0.order.pertinent_negative|cut:"None"  }} </div>
-                         </div>
-                          <div class="">
-                                <label class="label"> Phenotypes</label>
-                        <div class="value" > {{ so.0.order.phenotype }}</div>
-                     </div>
 
-                         <div>
-                         <div class="label"> Memo / Desc </div>
-                        <div class="value"> {{ so.0.order.desc }} </div>
-                        </div>
-  </div>
+    
 
  <div class="tabs top-buffer" id="tabs">
             <ul>
-                <li><a href="#phenotypes" class="tab-menu" > Phenotypes  </a></li>
-                <li><a href="#genelist" class="tab-menu" >  genelist  </a></li>
-                 {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}    
+             {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}    
                 <li><a href="#patient" class="tab-menu" >  Patient Info  </a></li>
                  {% endif %}
+                <li><a href="#phenotypes" class="tab-menu" > Phenotypes  </a></li>
+                {% comment " Later Use - Genelist " %}
+                <li><a href="#genelist" class="tab-menu" >  genelist  </a></li>
+                {% endcomment %}
                 <li><a href="#samples" class="tab-menu" >   Related Samples </a></li>
                 <li><a href="#analysis" class="tab-menu" >Related Analyses </a></li>
 
             </ul>
+        {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}    
+            <div class="tab Patient" id="patient">
+                    <div  class="sub-sub-title"> 
 
+                     </div>
+                <table class="table table-bordered table-striped table-hover">
+                    <tr>
+                        <th> Patient  </th>
+                        <th> MRN </th>
+                        <th> DOB </th>
+                        <th>  </th>
+                    </tr>
+                    {% for p in so %}
+                    <tr id='{{ o.id }}' class="list">
+
+                        <td><a href="/Patient/{{ p.patient.pid }}/">{{ p.patient.name }}</a></td>
+                        <td>{{ p.patient.mrn }}</td>
+                        <td>{{ p.patient.dob }}</td>
+                        <td> 
+                               
+
+
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %} 
             <div class=" tab" id="phenotypes" >
                       <div  class="sub-sub-title">  
                  {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role %}            
@@ -301,66 +421,29 @@ function show_more() {
                     </div>
                     {% endif %}
             </div>
+             {% comment " Later Use - Genelist " %}
                 <div class="tab genelist" id="genelist">
-
                 <div  class="sub-sub-title">  
                         {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}            
-                                 <a href="/PatientOrderGeneList/{{ so.0.order_id }}/"><button class="btn btn-primary btn-sm right-button"> Add Genelist </button> </a> 
-
+                            <a href="/PatientOrderGeneList/{{ so.0.order_id }}/"><button class="btn btn-primary btn-sm right-button"> Add Genelist </button> </a> 
                         {% endif %}
-                    </div>
-                       
-
-
-                       <table class="table table-bordered table-striped table-hover">
+                </div>
+                      <table class="table table-bordered table-striped table-hover">
                         <tr>
                             <th> Name </th>
                             <th> Lists </th>
                             <!-- <th> Memo</th> -->
                         </tr>
-
-
-
                               {% for glist in genelists %}
                         <tr>
                             <td class="name"> {{glist.genelist.name}}   </td>
                             <td class="lists"> {{glist.genelist.list | truncatechars:100}}      </td>
                             <!-- <td class="desc">{{glist.genelist.desc}}</td> -->
                         </tr>
-
                         {% endfor %}
-                        </table>
-
-                                            
-                                    
-            </div>
-                          {% if 'Interpretation' in  request.session.role or 'Manager' in  request.session.role%}    
-            <div class="tab Patient" id="patient">
-                    <div  class="sub-sub-title"> 
-
-                     </div>
-                <table class="table table-bordered table-striped table-hover">
-                    <tr>
-                        <th> Patient  </th>
-                        <th> MRN </th>
-                        <th> DOB </th>
-                        <th> relation </th>
-                    </tr>
-                    {% for p in so %}
-                    <tr id='{{ o.id }}' class="list">
-
-                        <td><a href="/Patient/{{ p.patient.pid }}/">{{ p.patient.first_name }} {{ p.patient.last_name }}</a></td>
-                        <td>{{ p.patient.mrn }}</td>
-                        <td>{{ p.patient.dob }}</td>
-                        <td> {{ p.relation }}
-                               
-
-
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-            {% endif %} 
+                        </table>            
+                </div>
+            {% endcomment %}
             <div class="tab samples" id="samples">
                             <div  class="sub-sub-title"> 
                      </div>
@@ -369,7 +452,8 @@ function show_more() {
                         <th> Sample </th>
                         <th> Container </th>
                         <th> Source </th>
-                        <th> Patient ID </th>
+                        <th> Status </th>
+                        <!-- <th> Patient ID </th> -->
                     </tr>
                     {% for s in so %}
                     <tr id='{{ o.id }}' class="samplelist">
@@ -377,9 +461,10 @@ function show_more() {
                         <td><a href="/sample/{{ s.sample_id }}/">{{ s.sample.asn }}</a></td>
                         <td>{{ s.container }}</td>
                         <td>{{ s.sample.source }}</td>
-                        <td>
+                        <td>  {{ s.sample.status }} </td>
+
                                 {% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
-                                                        <a href="/patient/{{ s.sample.patient_id }}"> {{ s.sample.patient_id }} </a>
+                                                        <!-- <a href="/patient/{{ s.sample.patient_id }}"> {{ s.sample.patient }} </a> -->
                                 {% endif %} 
 
 
@@ -413,6 +498,31 @@ function show_more() {
 </div>
 
 
+<div class="top-buffer " > <a href="#" onclick="show_more();" id="show_more"> Show Less </a> </div>
+       
+    <div class=" details-bottom" id="details-bottom">
+                             
+                        {% if so.0.order.secondary_findings_flag %}
+                            <div class="secondary_findings_flag"> <label class="label ">  Provide Secondary Findings : </label> 
+                            <div class="value">{{so.0.order.secondary_findings_flag}} </div> </div>
+                         {% endif %}
+                         {% if so.0.order.secondary_findings_note %}
+                          <div class=""> <label class="label"> secondary findings note</label> <div class="value" > {{ so.0.order.secondary_findings_note }}</div> </div>
+                          {% endif %}
+                         <div>   <div class="label"> Physician Phenotypes</div> <div class="value"> {{ so.0.order.physician_phenotype|cut:"None" }} </div>  </div>
+                        <div>  <div class="label"> Physician Genelist</div>  <div class="value"> {{ so.0.order.physician_genelist|cut:"None"  }} </div>   </div>
+                        <div>     <div class="label"> Pertinent Negative</div> <div class="value"> {{ so.0.order.pertinent_negative|cut:"None"  }} </div></div>
+
+                         {% if so.0.order.phenotype %}
+                          <div class=""> <label class="label"> Phenotypes</label> <div class="value" > {{ so.0.order.phenotype |cut:"None" }}</div> </div>
+                          {% endif %}
+                         {% if so.0.order.genelist %}
+                           <div class=""> <label class="label"> Genelist </label> <div class="value" > {{ so.0.order.genelist |cut:"None" }}</div> </div>
+                         {% endif %}
+                          {% if so.0.order.desc %}
+                             <div> <div class="label"> Memo / Desc </div>  <div class="value"> {{ so.0.order.desc }} </div> </div>
+                          {% endif %}
+  </div>
 
     <div class="top-buffer ">
         <div  class="sub-sub-title"> Related Orders Groups 
@@ -425,12 +535,15 @@ function show_more() {
 
                  {% for g in groups %}
                       {% ifchanged g.group_id %}
-                        <tr> 
-                            <td colspan="5">
+                        <tr  > 
+                            <td colspan="8">
                             {% if g.run_result %}
+                                <a onclick="save_report('{{so.0.sample.id}}', '{{so.0.patient.id}}')"> <button  class="button right-button" > Send Report  </button> </a> 
+                                <a onclick="check_status('{{g.mrn}}')"> <button  class="button right-button" > Check Status  </button> </a> 
                                 <button  class="button right-button" > Assay ID : {{ g.run_result }}  </button> 
                             {% else %}
                                <a onclick="run_cartagenia('{{g.group_id}}')"> <button  class="button right-button" > Run Cartagenia  </button> </a> 
+                               
                             {% endif %}
                                 <a onclick="go_cartagenia()"> <button  class="button right-button" > Access Cartagenia  </button> </a> 
                                 
@@ -442,13 +555,16 @@ function show_more() {
                             <th> Orders </th>
                             <th>  affected </th>
                             <th> Relations </th>
-                            <th> Patient ID </th>
+                            <th> Gender </th>
+                            <th> Name </th>
+                            <th> MRN </th>
+                            <th> Date of Birth </th>
                            
                       </tr>
                         {% endifchanged %}
-                    <tr class="grouplist">
+                    <tr class="grouplist {% if g.order_id ==  so.0.order_id %} self {% endif %}  {{ g.rel_name }}">
 
-                        <td>
+                        <td> 
                         {% ifchanged g.group_id %}
                             <a href="/order/groups/?gid={{ g.group_id }}">{{ g.group_id}}</a>
                             <a href="/order/groups/Add/?gid={{ g.group_id }}" class="btn btn-default btn-sm  right-button"> Edit </a>
@@ -458,13 +574,26 @@ function show_more() {
                         <td> <a href="/order/{{ g.order_id }}/"> {{ g.order_name }} </a> </td>
 
                         <td> {{ g.status }} </td>
-                        <td>{{ g.rel_name }}</td>
-                        
+                        <td class="relation">{{ g.relation }}</td>
+                        <td> {{ g.sex }} </td>
                         <td>
     {% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
-                            <a href="/patient/{{ g.patient_id }}/">{{ g.patient_id }} {{ g.patient.first_name }}  </a>
-    {% endif %}         
-                        </td>
+                            <a href="/patient/{{ g.pid }}/">
+                                {{ g.pname }}   </a>
+
+       {% endif %}        
+                       </td>                       
+                        <td>
+    {% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+                           {{ g.mrn }}  
+
+       {% endif %}        
+                       </td>
+                        <td>
+    {% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+                            {{ g.dob }} 
+       {% endif %}        
+                       </td>
 
 
 
@@ -474,11 +603,12 @@ function show_more() {
             </table>
             <!-- {% include "com/html_relation_tree.html" %} -->
 </div>
+
 <div class="clearfix"></div>
 
 
 
-
+  {% include "com/message_modal.html" %}
 
 
 </div>

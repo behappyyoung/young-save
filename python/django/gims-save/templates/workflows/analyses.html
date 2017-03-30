@@ -80,14 +80,14 @@ if(window.location.hostname =='gims-dev.shc.org'){
 				</tr>
 				<tr ng-repeat="r in runrequests | filter:{ run : '!none' } | filter : searchw | orderBy:'-datetime_created' ">
 
-					<td style="width:200px;"><a href="/analysis/{$ r.id $}/"> {$ r.template $} </a></td>					
-					<td style="width:200px;"> {$ r.name $}</td>
+					<td style="width:200px;"><a href="/analysis/{$ r.template.uuid $}/"> {$ r.template.name $} </a></td>					
+					<td style="width:200px;"> {$ r.template.name $}</td>
 
 					<td style="width:150px;"> {$ displayTimes(r.datetime_created) $}</td>
 					<td style="width:250px;"> 							
 							<div ng-repeat="input in r.inputs">
 								<div>
-									{$ input.channel $}  : <div style="overflow:hidden;white-space:nowrap;width:250px;text-overflow:ellipsis;">{$ input.value $} </div>
+									{$ input.channel $}  : <div style="overflow:hidden;white-space:nowrap;width:250px;text-overflow:ellipsis;">{$ input.data.uuid $} </div>
 								</div>
 							</div>
 					</td>	

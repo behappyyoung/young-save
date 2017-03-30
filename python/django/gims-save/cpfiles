@@ -2,3 +2,4 @@ cp -R /Users/s0199669/cgsdev/gims/gims/templates/* ./templates/
 cp -R /Users/s0199669/cgsdev/gims/staticfiles/ ./stacticfiles/
 cp -R /Users/s0199669/cgsdev/gims/tracker/ ./tracker/
 cp -R /Users/s0199669/cgsdev/gims/workflows/ ./workflows/
+cp -R /Users/s0199669/cgsdev/gims/mybackend/ ./mybackend/

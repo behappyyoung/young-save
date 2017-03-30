@@ -1,0 +1,366 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+
+
+
+<style>
+
+.list-table{
+    max-height: 600px;
+}
+td, th {
+    padding: 5px;
+
+}
+.steps{
+	clear:both;
+}
+
+
+.step2{
+	display: none;
+}
+
+#tubes{
+	display: flex;
+	width: 1000px;
+    margin: auto;
+	
+}
+/*#tubes > div{
+ 	width: 450px;
+ 	margin:auto;
+}*/
+.tube{
+	display: inline-block;
+	width: 100px;
+}
+.intube{
+	display: inline-block;
+	width: 100px;
+	height: 50px;
+	background-color: white;
+	margin: 1px;
+	vertical-align:top;
+	text-align: center;
+	font-size: 12px;
+	padding-top: 5px;
+    /* background-image: url(/static/IMAGES/icon-beaker.png); */
+    /* background-size: contain; */
+    /* background-repeat: no-repeat; */
+    /* background-position: center; */
+    /* background-blend-mode: luminosity; */
+}
+#dialog{
+	display: none;
+}
+
+.dialog-input{
+	display: flex;
+	margin: 20px auto;
+	height: 50px;
+}
+.dialog-input input{
+	width: 200px;
+}
+#tube-desc{
+	overflow: auto;
+	width: 900px;
+	margin: auto;
+}
+#tube-desc table .tube{
+	width: 100px;
+}
+#tube-desc table .id{
+	width: 250px;
+}
+#tube-desc table tbody td.name{
+	text-align: left;
+	margin-left: 30px;
+	width: 300px;
+}
+.print-only{
+	display: none;
+}
+.actions{
+	text-align: center;
+}
+.actions button{
+	margin: 10px 30px;
+	padding: 10px;
+	width: 150px;
+}
+</style>
+
+
+<script type="text/javascript">
+gimsApp.controller('workflowsController', ['$scope', '$http', function($scope, $http) {
+                {% autoescape off %}
+                            // $scope.samples = {{ samples }};
+                            $scope.s_lists = JSON.parse(decodeURIComponent('{{s_lists}}'));
+                            $scope.sample_size = $scope.s_lists.length;
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+                 console.log('s_lists', $scope.s_lists);
+ {% endif %}
+ 	$scope.sortType = 'type';
+ 	$scope.chosenSamples = [];
+ 	$scope.checkExist = function(s){
+ 		var index = $scope.chosenSamples.indexOf(s);
+ 		for(var i=0 ; i < $scope.chosenSamples.length;i++){
+ 			if($scope.chosenSamples[i].asn == s.asn){
+ 				return i;
+ 			}
+ 		}
+ 		return "-1";
+ 	}
+ 	$scope.chooseSample = function(s){
+	 		var index = $scope.checkExist(s);
+	 		if(index > -1){
+	 			$scope.chosenSamples.splice(index, 1);
+	 			$('#'+s.asn).prop('checked', false);
+	 		}else{
+	 			if($scope.chosenSamples.length < 46){
+		 			$scope.chosenSamples.push(s);
+		 			$('#'+s.asn).prop('checked', true);
+	 			}else{
+		 			$scope.meet_max();
+		 			$('#'+s.asn).prop('checked', false);
+		 		}
+	 		}
+	 		$scope.next();
+ 		
+ 	}
+ 	$scope.current_stage = 1;
+ 	$scope.meet_max = function(){
+ 		 		user_message(' ', 'Max 46 Selected');
+ 	}
+ 	$scope.multi_select = function(){
+ 		var checkboxes = $('.checkbox');
+ 		var total_count = $scope.chosenSamples.length;
+ 		var select_count = 0;
+ 		var meet_max = false;
+ 		for(var i=0;i<checkboxes.length;i++){
+ 			if($(checkboxes[i]).prop('checked')){
+
+ 			}else if(total_count <46&& select_count <10){
+ 				$(checkboxes[i]).prop('checked', true);	
+ 				total_count++;
+ 				select_count++;
+ 				$scope.chosenSamples.push($(checkboxes[i]).data('s'));
+ 				// console.log($(checkboxes[i]).data('s'));
+ 			}else{
+ 				if(total_count >= 46){
+ 					meet_max = true;	
+ 				}
+ 			}
+ 			
+
+ 		}
+ 		if(meet_max){
+ 			    $scope.meet_max();
+ 		}
+ 		$scope.next();
+ 	}
+ 	$scope.next = function(){
+ 		$scope.current_stage=2;
+		console.log($scope.chosenSamples);
+		$('.step2').css('display', 'block');
+		var cur=0;
+		for(var j=1;j<=4;j++){
+	 		for(var i=1; i<=12; i++){
+	 			if(typeof $scope.chosenSamples[cur] !== 'undefined'){
+		 			$('#intube-'+i).html(i + '<br />' + $scope.chosenSamples[cur].asn);
+		 			cur++;	
+	 			}else{
+	 				break;
+	 			}
+		 	}
+ 		}
+ 		 var tubedetails = '<div class="list-table"> <table class="table table-stripped text-center"> <tr><th class="tube">Qubit Tube #</th>  <th class="id"> Sample ID </th> <th class="id"> container ID </th>  <th class="name"> name </th> </tr>';
+
+ 		 tubedetails += '<tr> <td> 1</td><td> </td><td>Positive control</td> <td class="name">CEPH</td> </tr>';
+ 		  tubedetails += '<tr> <td> 2</td><td> </td><td>Negative control</td> <td class="name">TE</td> </tr>';
+ 		 
+ 		 for(var i =0; i<$scope.chosenSamples.length;i++){
+ 		 	tubedetails += '<tr> <td> '+ (i+3) + '</td><td> ' + $scope.chosenSamples[i].asn + '</td><td> ' + $scope.chosenSamples[i].container + '</td> <td class="name">' + $scope.chosenSamples[i].pname + '</td> </tr>';
+ 		 }
+
+ 		 tubedetails += '</table></div>';
+ 		 $('#tube-details').html(tubedetails);
+ 		 var today = new Date();
+ 		 $scope.today = (today.getMonth()+1) +'/'+ today.getDate() +'/'+ today.getFullYear();
+ 		 $('#project_name').html('{{type}}_{{new_id}}_'+ (today.getMonth()+1) +'_'+ today.getDate() +'_'+ today.getFullYear() );
+ 	}
+
+ 	$scope.clear_choice = function(){
+ 		$scope.current_stage =1;
+ 		var checkboxes = $('.checkbox');
+ 		for(var i=0;i<checkboxes.length;i++){
+ 			$(checkboxes[i]).prop('checked', false);
+ 		}
+ 		$scope.chosenSamples = [];
+ 		$('.step2').css('display', 'none');
+ 	}
+
+ 	var tubeHTML='';
+	for(var j=1;j<=4;j++){
+ 		for(var i=1; i<=12; i++){
+	 		tubeHTML += '<div class="intube" id="intube-'+i+'">   </div>';
+	 	}
+	 	$('#tube-'+j).html(tubeHTML);
+	 	tubeHTML = '';
+ 	} 	
+
+
+ 	$scope.save = function(){
+ 			$('#dialog-name').val($('#print-title').html());
+ 			$( "#dialog" ).dialog();
+ 	}
+ 	$scope.saveWork = function(andprint=false) {
+ 		var sample_list = [];
+ 		for(var i =0; i<$scope.chosenSamples.length;i++){
+ 		 		sample_list.push( { 'tube' : (i+3), 'order_id': $scope.chosenSamples[i].order_id,  'sample_id' : $scope.chosenSamples[i].sample_id, 'container' : $scope.chosenSamples[i].container });
+ 		 	}
+ 		 var name = $('#project_name').text();
+ 		$http({
+ 			
+    						headers: {
+   							'Content-Type': 'application/json'
+ 							},
+    						method:'POST', 
+    						url:'/lab/save/{{type}}/', 
+    						data:{
+    							'name': name, 
+						        'sample_list': sample_list
+    						}
+    					}).then(function(response){
+    						console.log(response.data);
+    							if(response.data='None'){
+    								// confirm('Saved');
+    								user_message('confirm', 'Saved');
+    								if(andprint){
+    									$scope.Print();
+    								}
+    								window.location.href = '/lab/workflows/#{{title}}';
+    							}else{
+    								user_message('error', response.data);
+    								// alert('error - ' + response.data ) ;	
+    							}
+					    		
+					    });
+ 	}
+
+ 	$scope.Print = function(){
+ 		 var divElements = $('.for-print').html();
+ 		 // $scope.saveWork();
+ 		var printWindow = window.open("", "_blank", 'height=1100,width=800');
+                            printWindow.document.open();
+                            printWindow.document.write('<html><head><title>' + $('#dialog-name').val() + '</title><link rel="stylesheet" type="text/css" href="/static/CSS/print-lab.css?v=3"></head><body><div id="printingDiv" class="flex">');
+                            printWindow.document.write(divElements);
+                            printWindow.document.write('</div></body></html>');
+
+                             // setTimeout(function() {
+                             //     printWindow.print();
+                             //     printWindow.close();
+
+                             // }, 100);
+ 	}
+}]);
+</script>
+
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="steps">
+
+
+
+  {% include "workflows/com/lab_header.html" %}
+        
+
+	</div>  
+
+		<div class="samples step1">
+					<button class="button btn btn-info btn-sm" ng-click="multi_select()"> Select next 10  </button> 
+					<button class="btn btn-default btn-sm" ng-click="clear_choice()"> Clear </button>
+					<!-- <button class="button btn btn-primary btn-sm" ng-click="next()"> Add to the project </button>  -->
+				<div class="list-table">
+					<table class="table table-striped table-bordered table-hover table-hove-info ">
+						<tr>
+							<th></th>
+							<th>  name </th>
+							<th> sample asn </th>
+							<th> 
+								 container ID 
+						       
+	       					</th>
+							<th> order type</th>
+							<th>  status </th>
+							<th>  start date</th>
+							<!-- <th> End date </th> -->
+							<th> User ID </th>
+						</tr>
+						<tr ng-repeat="s in s_lists | orderBy:sortType:sortReverse " id='{$ s.sample_id + "_" +s.order_id $}' class="sample"> 
+							<th> <input type="checkbox" name="{$ s.asn $}" id="{$ s.asn $}" class="checkbox" ng-click="chooseSample(s);" data-s="{$ s $}"/></th>
+							<td>{$ s.pname $}</td>
+							<td>{$ s.asn $}					</td>
+							<td>	{$ s.container $}					</td>
+							<td>	{$ s.order_type $}					</td>
+							<td> 	{$ s.status $}</td>
+							<td> 	{$ s.start_date $}</td>
+							<!-- <td> 	{$ s.end_date $}</td> -->
+							<td> {$ s.userid $}</td>
+						</tr>
+					</table> 
+				</div>	
+		</div>	
+
+	
+
+	 	<div class="tubes step2 top-buffer">
+	 		<div id="tubes"  class="for-print flex" >
+
+		 		<div id="tube-desc" >
+		 			<div class="sub-sub-title" id="tube-info">
+		 				<div id="print-title" class="print-title print-items"> Project : <span id="project_name"> </span> </div> 
+		 				<div class="print-only print-items"> Today's Date: {$ today $} </div>
+		 				<div class="print-only print-items"> Initials: {{ request.user }} </div>
+		 				<div class="print-items"> Total # of samples: {$ chosenSamples.length $} </div>
+		 			</div>
+
+
+		 			<div id="tube-details">
+		 				
+		 			</div>
+		 		</div>
+	 		</div>
+
+	 		<div class="actions">
+				 
+				 
+				<!-- <button class="btn btn-primary btn-sm" ng-click="saveWork()"> Save </button>  -->
+				 <button class=" btn btn-primary btn-sm" ng-click="Print();"> Print </button>
+				  <button class=" btn btn-primary btn-sm" onclick="save_div();"> Export to CVS </button>
+				 <button class="btn btn-primary btn-sm" ng-click="saveWork()"> Save & Exit </button>
+			</div>
+	 	</div>
+
+
+	 	<div id="dialog" title="Save current workflow">
+	 		<div class="dialog-input"> 
+	 		<input id="dialog-name" type="name" name="name" placeholder="workflow name" />
+	 		
+	 		 </div>
+	 	</div>
+
+
+
+
+</div>
+
+</div>
+
+  {% include "com/message_modal.html" %}
+
+{% endblock %}

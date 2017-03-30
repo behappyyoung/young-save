@@ -145,10 +145,10 @@
     <div class="panel analysis topmenu">
         <div  class="panel panel-menu">
             <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-workflows.png" />  Workflows </div>
-            <a href="{% url 'workflows' %}" id="dash-btn-workflows"><button class="btn menu btn-sm "> View Workflows</button> </a> 
-    {% if 'Admin' in  request.session.role or 'Manager' in  request.session.role%}            
+            <a href="{% url 'analyses' %}" id="dash-btn-analyses"><button class="btn menu btn-sm "> View Analyses</button> </a> 
+         
              <a href="{% url 'lab_main' %}"><button class="btn menu btn-sm "> Lab Workflows</button> </a> 
-    {% endif %}         
+    
         </div>
         <div class="panel panel-menu"> <a href="{% url 'samples' %}"> 
             <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-samples.png" />  Samples </div></a> 

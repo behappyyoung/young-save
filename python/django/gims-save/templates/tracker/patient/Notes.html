@@ -1,0 +1,171 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+<style type="text/css">
+	.notes {
+		max-height: 500px;
+		overflow: auto;
+	}
+	.form {
+		margin: 20px auto;
+	}
+	form input[id='id_patient'], form label[for='id_patient']{
+		display: none;
+	}
+	form label{
+		width: 150px;
+		margin: 10px 20px;
+	}
+	form label[for='id_note']{
+		display: block;
+	}
+	form input, form select, form .button {
+		width: 350px;
+	}
+	form .action{
+		text-align: center;
+		margin: 20px auto;
+	}
+	form textarea{
+		margin-left: 150px;
+		width: 80%;
+		height: 100px;
+	}
+	form select#id_recipients{
+		height: 100px;
+	}
+	.sub-title select{
+		-webkit-appearance: none;
+	    -moz-appearance: none;
+	    text-align: center;
+	    background-color: transparent;
+	    border: none;
+	}
+	.notes table{
+		background-color: rgba(181, 188, 214, 0.6);
+	}
+	.notes table td.date, .notes table td.order_name{
+		width: 150px;
+	}
+
+	/*form textarea:after { content: '\00000A';white-space: pre; }*/
+</style>
+{% if request.environ.REMOTE_ADDR == '127.0.0.1' %}
+     {{ request.environ.REMOTE_ADDR }}
+ {% endif %}
+<script type="text/javascript">
+	 {% autoescape off %}
+
+     {% endautoescape %}
+     var order_list = []
+     {% for so in so_list %}
+     	order_list.push({{so.order_id}});
+     {% endfor %}
+
+{% if request.environ.REMOTE_ADDR == '127.0.0.1' %}
+     console.log('order list  ' , order_list);
+ {% endif %}
+
+$(function () {
+    'use strict';
+    var select_options = $('#id_order option');
+    for(var i=0; i<select_options.length; i++){
+    	console.log(select_options[i].value);
+    	if(select_options[i].value == "" || $.inArray(parseInt(select_options[i].value) , order_list) >= 0  ){
+    		console.log('yes', select_options[i].value);
+    	}else{
+    		$(select_options[i]).attr('disabled', 'disabled').css('display', 'none')
+    	}
+    }
+
+});
+	function delete_note(nid) {
+	    if(confirm('Are you sure to delete?')){
+	        $.ajax({
+	            url:'/patient/{{pid}}/Note/'+nid+'/',
+	            type:'json',
+	            method:'POST',
+	            data:{action: 'Delete'},
+	            error: function()
+	            {
+	                //file not exists
+	                 console.log('error');
+	            },
+	            success: function(data)
+	            {
+	                if(data=='Done'){
+	                    location.reload();
+	                }
+	            }
+	            });
+	    }
+ 	};
+</script>
+ <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" /> 
+   	{% if  action == 'Edit' %}
+   		Edit Note for Patient : {{p_name}}
+   	{% else %}
+   	 	Add Note for Patient : {{p_name}}
+   	{% endif %}
+
+   </div>
+<div class="form">
+ 		{% if  action == 'Edit' %}
+            <form action="/patient/{{pid}}/note/{{nid}}/" method="post">
+                {% csrf_token %}
+                {{ form }}
+                <div class="action">
+               		 <input type="submit" value="Edit" class="button btn btn-primary" /> 
+                	  <a href="/patient/{{pid}}/" class="button btn  btn-default" > Cancel </a> 
+                	
+                </div>
+            </form>
+        {% else %}
+            <form action="/patient/{{pid}}/notes/" method="post">
+                {% csrf_token %}
+                {{ form }}
+                <div class="action">
+               		 <input type="submit" value="  Save " class="button btn btn-primary" /> 
+                	  <a href="/patient/{{pid}}/" class="button btn  btn-default" > Cancel </a> 
+                	
+                </div>
+            </form>
+
+        {% endif %}
+</div> 
+
+<div class="sub-sub-title"> Current Notes </div>
+ <div class="notes">
+
+ 	<table class="table table-bordered table-striped table-hover">
+		<thead>
+
+			<th> date </th>
+			<th> Order Name</th>
+			<th> category</th>
+			<!-- <th> recipients</th> -->
+			<th> Note </th>
+			<th> </th>
+		</thead>
+		<tbody>
+			{% for note in notes %}
+
+			<tr>
+				<td class="date"> {{note.update_time}}</td>
+				<td class="order_name"><a href="/order/{{note.order.id}}/"> {{note.order|cut:"None"}} </a></td>
+				<td> {{note.category.category_name}}</td>
+
+				<!-- <td> {{note.recipients|cut:"None"}}</td> -->
+				<td> {{note.note}}</td>
+				<td> 
+					<a id="go-edit-patientfile" href="/patient/{{pid}}/Note/{{note.id}}/"> 
+						<button id="edit-note" class="button btn-sm btn-default" > Edit </button> </a> 
+					<button id="delete-note" class="button btn-sm btn-default" onclick="delete_note('{{ note.id }}')"> Delete </button>
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+</div>
+
+{% endblock content %}

@@ -1,5 +1,5 @@
 from django import forms
-from tracker.models import Samples, Orders, SampleOrderRel, PatientOrderPhenoType, PhenoTypes, OrderGeneList, Notes, \
+from tracker.models import Samples, Orders, SampleOrderRel, OrderGeneList, Notes, \
     PatientRelations,Patients, Family, OrderGroups, PatientFiles
 from users.models import UserProfile
 from mybackend.models import GeneLists
@@ -19,6 +19,17 @@ class PatientForm(forms.ModelForm):
         }
 
 
+class SampleForm(forms.ModelForm):
+    class Meta:
+        model = Samples
+        fields = ['asn', 'patient_id', 'type', 'status', 'volume', 'note']
+        widgets = {
+            'patient_id': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'type': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'asn': forms.TextInput(attrs={'readonly': 'readonly'})
+        }
+
+
 class OrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(OrderForm, self).__init__(*args, **kwargs)
@@ -27,11 +38,12 @@ class OrderForm(forms.ModelForm):
         except:
             CHOICES = []
         self.fields['owner'].widget = forms.Select(choices=((x.id, x.username) for x in CHOICES))
+        # self.fields['secondary_findings_flag'].initial = False
 
     class Meta:
         model = Orders
         fields = '__all__'
-        labels = {'desc': ' Memo / Desc '}
+        labels = {'desc': ' Memo / Desc ', 'secondary_findings_flag' : 'Provide Secondary Findings'}
         widgets = {
             'patient_id': forms.TextInput(attrs={'readonly': 'readonly'}),
             'order_name': forms.TextInput(attrs={'readonly': 'readonly'}),
@@ -43,6 +55,9 @@ class OrderForm(forms.ModelForm):
             'physician_phenotype': forms.Textarea(attrs={'readonly': 'readonly'}),
             'physician_genelist': forms.Textarea(attrs={'readonly': 'readonly'}),
             'phenotype': forms.Textarea(),
+            'genelist': forms.Textarea(),
+            # 'secondary_findings_note': forms.Textarea(),
+            'secondary_findings_flag':forms.Select(choices=(('', 'Not Selected'), ('Yes', 'Yes'), ('No', 'No')))
         }
 
 
@@ -73,7 +88,8 @@ class PatientRelationsForm(forms.ModelForm):
         except:
             CHOICES = []
 
-        self.fields['relative'].widget = forms.Select(choices=((x['pid'], x['first_name'] + ' ' + x['middle_name'] + ' ' + x['last_name'] + ' ( ' + x['mrn']+ ' ) ') for x in CHOICES))
+        self.fields['relative'].widget = forms.Select(choices=((x['pid'], x['first_name'] + ' ' + (x['middle_name'] or '') + ' ' + x['last_name'] + ' ( ' + x['mrn']+ ' ) ') for x in CHOICES))
+
     class Meta:
         model = PatientRelations
         fields = '__all__'
@@ -93,13 +109,23 @@ class PatientFilesForm(forms.ModelForm):
 
 
 class FamilyForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(FamilyForm, self).__init__(*args, **kwargs)
+
+        try:
+            CHOICES = Patients.objects.all().values('id', 'first_name', 'middle_name', 'last_name', 'mrn')
+        except:
+            CHOICES = []
+
+        self.fields['patient'].widget = forms.Select(
+        choices=((x['id'], x['first_name'] + ' ' + (x['middle_name'] or '') + ' ' + x['last_name'] + ' ( ' + x['mrn'] + ' ) ')
+                 for x in CHOICES))
 
     class Meta:
         model = Family
         fields = ('family_id', 'role', 'affectedstatus', 'patient')
         widgets={
-            # 'family_id' : forms.TextInput(attrs={'readonly': 'readonly'}),
-            # 'patient': Select(choices=((x.pid, x.first_name + ' ' + x.last_name + ' ( MRN : ' + x.mrn + ' ) ') for x in CHOICES )),
+            'family_id' : forms.TextInput(attrs={'readonly': 'readonly'}),
         }
 
 
@@ -122,23 +148,6 @@ class SampleOrderRelForm(forms.ModelForm):
         fields = '__all__'
 
 
-class PatientOrderPhenoTypeForm(forms.ModelForm):
-    class Meta:
-        model = PatientOrderPhenoType
-        fields = '__all__'
-
-
-class PhenoTypesForm(forms.ModelForm):
-    desc = forms.CharField(widget=forms.Textarea)
-
-    class Meta:
-        model = PhenoTypes
-        fields = ('name', 'type', 'desc', 'image', 'date',)
-        widgets = {
-            'date': forms.TextInput(attrs={'readonly': 'readonly'})
-        }
-
-
 class OrderGeneListForm(forms.ModelForm):
     class Meta:
         model = OrderGeneList
@@ -152,8 +161,12 @@ class GeneListsForm(forms.ModelForm):
 
 
 class NotesPatientForm(forms.ModelForm):
-    # def __init__(self, *args, **kwargs):
+    # def __init__(self, patient = None, *args, **kwargs):
+    #     print(patient)
     #     super(NotesPatientForm, self).__init__(*args, **kwargs)
+    #     print(patient)
+
+    #   removed recipients for now
     #     try:
     #         CHOICES = UserProfile.objects.all()
     #     except:
@@ -163,28 +176,21 @@ class NotesPatientForm(forms.ModelForm):
 
     class Meta:
         model = Notes
-        fields = ('patient_id', 'category', 'note')
+        fields = ('patient', 'category', 'order',  'note')
 
         widgets = {
             'update_time': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'patient_id': forms.TextInput(attrs={'readonly': 'readonly'})
+            'patient': forms.TextInput(attrs={'readonly': 'readonly'})
         }
 
 
 class NotesOrderForm(forms.ModelForm):
-    # def __init__(self, *args, **kwargs):
-    #     super(NotesOrderForm, self).__init__(*args, **kwargs)
-    #     try:
-    #         CHOICES = UserProfile.objects.all()
-    #     except:
-    #         CHOICES = []
-    #     self.fields['recipients'].widget = forms.SelectMultiple(
-    #         choices=itertools.chain(((x.user_id, x.username) for x in CHOICES)))
+
     class Meta:
         model = Notes
-        fields = ('order', 'patient_id', 'category',  'note')
+        fields = ('order', 'patient', 'category',  'note')
         widgets = {
                 'order': forms.Select(attrs={'disabled': 'disabled'}),
                 'update_time': forms.TextInput(attrs={'readonly': 'readonly'}),
-                'patient_id': forms.TextInput(attrs={'readonly': 'readonly'})
+                'patient': forms.TextInput(attrs={'readonly': 'readonly'})
             }

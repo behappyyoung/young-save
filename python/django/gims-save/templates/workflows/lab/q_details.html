@@ -1,0 +1,246 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+{% load staticfiles %}
+ <script src="{% static 'JS/jquery.fileupload.js' %}"></script>
+
+<style>
+
+td, th {
+    padding: 5px;
+
+}
+.for-print{
+    /*display: none;*/
+}
+.tube{
+    display: inline-block;
+    width: 100px;
+    max-height: 500px;
+}
+.intube{
+    display: inline-block;
+    width: 100px;
+    height: 40px;
+    background-color: white;
+    margin: 1px;
+    vertical-align:top;
+    text-align: center;
+    font-size: 12px;
+    padding-top: 5px;
+}
+.sQREDO{
+    border:2px solid orange;
+    color:blue;
+}
+.wQREDO{
+    color:blue;   
+}
+.sQFAIL{
+    color:red;
+}
+</style>
+<script type="text/javascript">
+	gimsApp.controller('workflowsController', ['$scope', '$http', function($scope, $http) {
+                {% autoescape off %}
+
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+
+ {% endif %}
+
+   
+ 	// var tubedetails = ' <table class="table table-stripped text-center"> <tr><th> tube number </th>  <th> asn </th> <th> container # </th>  </tr>';
+         $scope.redo_list=[];
+
+ 	// 	 tubedetails += '</table>';
+
+      // $('#print-title').html({{workflow.id}}+'-R');
+
+  //    $scope.Print = function(){
+ 	// 	 var divElements = $('#for-print').html();
+ 	// 	var printWindow = window.open("", "_blank", 'height=590,width=1100');
+  //                           printWindow.document.open();
+  //                           printWindow.document.write('<html><head><title>{{workflow.name}}</title><link rel="stylesheet" type="text/css" href="/static/CSS/print.css?v=12"></head><body><div id="printingDiv">');
+  //                           printWindow.document.write(divElements);
+  //                           printWindow.document.write('</div></body></html>');
+  //                            setTimeout(function() {
+  //                                printWindow.print();
+  //                                printWindow.close();
+
+  //                            }, 100);
+ 	// }
+
+    $scope.newWork = function() {
+        console.log('{{redo_list}}');
+         var name = $('#print-title').text();
+         var type = '{{title}}'.substring(0, 1);
+         var url = '{% url 'quantification_redo' %}';
+         var formInner = '<form action="' + url + '" method="post">' + '<input type="text" name="redo_list" value="{{redo_list}}" />' ;
+         formInner += '<input type="text" name="new_id" value="{{workflow.name}}_R" />' +'</form>';
+         var form = $(formInner);
+        $('body').append(form);
+        form.submit();
+
+
+    }
+
+}]);
+
+$(function () {
+    'use strict';
+    // Change this to the location of your server-side upload handler:
+           var uploadUrl = "/lab/uploadfile/qt/";
+           // 
+            $('#fileupload').fileupload({
+                url: uploadUrl,
+                dataType: 'json',
+                formData: {type: '{{title}}', id:'{{workflow.id}}', file_type:'Data File'},
+                done: function (e, data) {
+                    console.log(e, data, data.result);
+                   
+                  if(data.result='Done'){
+                       user_message('Status', 'File Uploaded / Processed');
+                      location.reload();
+                  }else{
+                    user_message('error', data.result);
+                  }
+                },
+                progress:function(e, data){
+                   user_message('Status', 'Processing file - please wait');
+                }
+            });
+
+});
+
+</script>
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="">
+
+
+
+	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" /> {{title}} Details for Project : {{workflow.name}}
+    <a class="button right-button btn btn-sm" href="/lab/workflows/#{{title}}"> Back </a>
+	</div>  
+
+        <div id="for-print"  class="for-print " >
+	        <table class="table table-bordered text-center">
+                <tr>
+                    <th> ID </th>
+                    <th> Name </th>
+                    <th> start </th>
+                    <th> updated </th>
+                    <th> status </th>
+                    <th> SID </th>
+                   
+
+                </tr>
+
+
+                    <tr class="workflow">
+                        <td>{{workflow.id}}</td>
+                        <td>{{workflow.name}}</td>
+                        <td>{{ workflow.created_date }}</td>
+                        <td>{{ workflow.updated_date }}</td>
+                        <td>{{ workflow.status.labstatus_name }}</td>
+                        <td> {{ workflow.username }}</td>
+                     </tr>
+            </table>
+
+        <div>
+        <div class="actions">
+            <button class="btn btn-primary btn-sm" onclick="print_div();"> Print </button> 
+             <button class="button btn btn-primary btn-sm" onclick="save_div();" id="button_save"> Export to CSV </button>
+
+             {% if redo_list %}
+             <button class="btn btn-primary btn-sm right-button" ng-click="newWork()"> Redo High Concentrations </button>    
+             {% endif %}
+            <label for="fileupload" class="btn btn-success btn-sm fileinput-button" id="label-fileupload"> Upload Data File</label>
+            <input class="btn btn-success fileinput-button" id="fileupload" type="file" style="visibility: hidden;" name="files" / >
+      </div>
+
+	        <table class="table table-bordered table-striped table-hover text-center">
+                <tr>
+                	<th> Tube Number </th>
+                    <th> Sample ans </th>
+                    <th> container </th>
+                    <th> patient name  </th>
+                    <th> DNA concentration (ng/ul) </th> 
+                    <th> Std 1 RFU </th>
+                    <th> Std 2 RFU </th>
+                    <th>status</th>
+                    
+                </tr>
+                    <tr class="workflow ">
+                        <td> 1</td>
+                        <td></td>
+                        <td>Standard- Positive control</td>
+                        <td></td>
+                        <td>10</td>
+                        <td>130.25</td>
+                         <td>  12865.56</td>
+                        
+                     </tr>
+                    <tr class="workflow ">
+                        <td> 2</td>
+                        <td></td>
+                        <td>Blank- Negative control</td>
+                        <td></td>
+                        <td>0/NA</td>
+                        <td>130.25</td>
+                         <td>  12865.56</td>
+                        <td> </td>
+                        
+                     </tr>
+                {% for s in wf_status %}
+                    <tr class="workflow w{{ s.status.labstatus}} s{{ s.sample.status.status }}">
+                        <td> {{s.tube_number}}</td>
+                        <td>{{s.sample.asn}}</td>
+                        <td>{{s.container}}</td>
+                        <td>{{ s.patient.name }}</td>
+                        <td> {{ s.result |cut:"None" }} </td>
+                        <td></td>
+                         <td></td>
+                        <td> {{ s.status.labstatus_name|cut:"None" }} </td>
+                        
+                     </tr>
+                 {% endfor %}
+            </table>
+            </div>
+            </div>
+
+           
+            <div class="sub-sub-title">
+                Related Files
+            </div>
+            <table class="table table-bordered table-striped table-hover text-center">
+                <tr>
+                    <th> file name</th>
+                    <th> type </th>
+                    <th> upload time </th>
+                    <!-- <th> clould id  </th> -->
+                    <th> url </th>
+
+                </tr>
+
+                {% for f in files %}
+                    <tr class="workflow">
+                        <td> {{f.name}}</td>
+                        <td>{{f.file_type}}</td>
+                        <td>{{f.upload_date}}</td>
+                        <!-- <td>{{ f.cloud_id }}</td> -->
+                        <td> <a href="{{ f.url }}" target="_new">{{ f.url }} </a></td>
+                     </tr>
+                 {% endfor %}
+            </table>
+</div>
+
+
+
+</div>
+
+
+  {% include "com/message_modal.html" %}
+
+{% endblock %}

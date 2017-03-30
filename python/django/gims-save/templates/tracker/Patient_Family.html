@@ -30,6 +30,11 @@
 <script type="text/javascript">
 jQuery(document).ready(function() {
 
+ {% if 'New' not in action %}	
+	$('#id_family_id').attr('readonly', 'readonly');
+{% endif %} 
+
+
  {% if 'Add' in action or 'New' in action %}
  	document.getElementById('id_patient').outerHTML = document.getElementById('id_patient').outerHTML.replace(/select/g, 'datalist');
 	$('input[name="patient"]').val($('#id_patient option[datalisted=datalisted]').val());

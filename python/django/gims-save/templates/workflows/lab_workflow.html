@@ -70,16 +70,10 @@ gimsApp.controller('workflowsController', ['$scope', function($scope) {
 
 <div ng-controller="workflowsController" class="workflows">
 
-<div class="">
+<div class="main">
 
 
-          <div style="width: 100%;">
-
-                <a href="{% url 'lab_main' %}" class="right-button btn btn-default btn-sm"> back to Main </a>
-            </div>
-	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" />{{title}}
-
-	</div>  
+          {% include "workflows/com/lab_header.html" %}
 
 
     <div class="samples-list">

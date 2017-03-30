@@ -99,7 +99,7 @@ $(function () {
                     {% for o in so %}
                     <tr id='{{ o.id }}' class="list">
 
-                        <td><a href="/Patient/{{ p.patient.pid }}/">{{ o.order }}</a></td>
+                        <td><a href="/order/{{ o.order_id }}/">{{ o.order }}</a></td>
                         <td>{{ o.order.type }}</td>
                         <td>{{ o.order.status }}</td>
                         <td> </td>

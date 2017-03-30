@@ -20,7 +20,8 @@
     <script src="{% static 'JS/bootstrap.min.js' %}" ></script>
     <script src="{% static 'JS/jquery-ui.min.js' %}" ></script>
     <script src="{% static 'JS/ui-grid.min.js' %}"></script>
-    
+     <script src="{% static 'JS/main.js' %}"></script>
+    <script src="{% static 'JS/workflows.js' %}?v=0309"></script>
     <script type="text/javascript" src="{% static 'JS/jjsonviewer.js' %}"></script>
     <script type="text/javascript">
            var gimsApp = angular.module('myApp',  [])               // for use of AngularJs with Django
@@ -85,8 +86,11 @@
 <body >
     {% include "common_header.html" %}
     <div class="container" data-url="{{request.get_full_path}}">
-        <div class="row">
+     {% for message in messages %}
+            <div class="alert alert-info {% if message.tags %} {{ message.tags }} {% endif %}">{{ message }}</div>
 
+        {% endfor %}
+        <div class="row">
 
                 {% block content %}
                 {% endblock content %}

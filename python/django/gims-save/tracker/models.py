@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from gims import settings
 from users.models import UserProfile
 from mybackend.models import PhenoTypeLists, GeneLists
+from django_mysql.models import JSONField
 
 FILE_TYPES = (
     ('IMAGE', 'Image'),
@@ -23,15 +24,28 @@ class Patients(models.Model):
     first_name = models.CharField(max_length=50,  null=False)
     mrn = models.CharField(max_length=100, null=False, blank=False)           # patient ID for now
     dob = models.DateField(null=False)
-    address = models.CharField(max_length=200,  null=True, blank=True, default='')
-    phone = models.CharField(max_length=20,  null=True, blank=True, default='')
-    work_phone = models.CharField(max_length=200,  null=True, blank=True, default='')
+    address1 = models.CharField(max_length=200, null=True)
+    address2 = models.CharField(max_length=200, null=True)
+    city = models.CharField(max_length=200, null=True)
+    state = models.CharField(max_length=45, null=True)
+    zip = models.CharField(max_length=45, null=True)
+    phone = models.CharField(max_length=45, null=True)
+    work_phone = models.CharField(max_length=45, null=True)
     ethnicity = models.CharField(max_length=50,  null=True, blank=True, default='')
     sex = models.CharField(max_length=10, null=False)
     memo = models.TextField(blank=True, null=True)
+    patient_visit_number = models.CharField(max_length=45, null=True)
+    patient_account_number = models.CharField(max_length=45, null=True)
 
     def __unicode__(self):
         return self.pid
+
+    def name(self):
+        return self.first_name + " " + (self.middle_name or '') + ' ' + self.last_name
+
+    def address(self):
+        return (self.address1 or'') + ' ' + (self.address2 or '') + ' ' + (self.city or '') \
+               + ', ' + (self.state or '') + ' ' + (self.zip or '')
 
 
 class PatientFiles(models.Model):
@@ -44,6 +58,7 @@ class PatientFiles(models.Model):
     type = models.CharField(max_length=10, choices=FILE_TYPES, default='IMAGE')
     file = models.FileField(max_length=400, upload_to=settings.MEDIA_ROOT+'/Patient/',  null=True, blank=True)  # for form
     desc = models.CharField(max_length=100, null=True, blank=True, default='')
+    by = models.ForeignKey(User, related_name='by', blank=True, null=True, default='')
 
 
 class AffectedStatus(models.Model):
@@ -94,11 +109,12 @@ class Samples(models.Model):
     patient_id = models.CharField(max_length=100, default=1, null=False)
     status = models.ForeignKey('SampleStatus', related_name="SampleStatus", on_delete=models.CASCADE, default=1)
     name = models.CharField(max_length=200, null=True)
+    volume = models.FloatField(blank=True, default=100)
     desc = models.TextField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
 
     def __unicode__(self):
-        return self.name
+        return self.asn
 
 
 class SampleContainer(models.Model):
@@ -117,7 +133,7 @@ class SampleFiles(models.Model):
     loom_id = models.CharField(max_length=200, null=True)
 
     def __unicode__(self):
-        return self.loom_id
+        return self.file_name
 
 
 class SampleStatus(models.Model):
@@ -138,26 +154,6 @@ class OrderStatus(models.Model):
     def __unicode__(self):
         return self.status_name
 
-LabOrder_Status = (
-    ('COLLECTED', 'Sample Collected'),
-    ('READY', 'Ready For Lab'),
-    ('QSTART', 'Start Quantification'),
-    ('QFAIL', 'Quantification Failed'),
-    ('QREDO', 'Quantification Failed - Need Adjustment'),
-    ('QPASS', 'Quantification Passed'),
-    ('FSTART', 'Start Fluidigm'),
-    ('FDONE', 'Fluidigm Complete'),
-)
-
-
-class LabOrderStatus(models.Model):
-    labstatus = models.CharField(max_length=20, default='COLLECTED')
-    labstatus_name = models.CharField(max_length=50, null=False)
-    status_desc = models.CharField(max_length=200, null=True)
-
-    def __unicode__(self):
-        return self.labstatus_name
-
 
 class OrderType(models.Model):
     type = models.CharField(max_length=20, default='SINGLE')
@@ -165,6 +161,14 @@ class OrderType(models.Model):
 
     def __unicode__(self):
         return self.type_name
+
+
+class OrderResult(models.Model):
+    result = models.CharField(max_length=20, null=False)
+    result_desc = models.CharField(max_length=20, null=True)
+
+    def __unicode__(self):
+        return self.result_desc
 
 
 class Orders(models.Model):
@@ -177,8 +181,6 @@ class Orders(models.Model):
     complete_date = models.CharField(max_length=50, blank=True, null=True)
     observation_date = models.CharField(max_length=80, null=True)
     status = models.ForeignKey('OrderStatus', related_name="OrderStatus", on_delete=models.CASCADE, default=1)
-    # lab_status = models.CharField(choices=LabOrder_Status, max_length=20, default=' ')
-    lab_status = models.ForeignKey('LabOrderStatus', related_name="LabOrderStatus", on_delete=models.CASCADE, default=1)
     type = models.ForeignKey('OrderType',related_name='OrderType', on_delete=models.CASCADE, default=1)
     provider_name = models.CharField(max_length=200, default='')
     provider_address = models.CharField(max_length=200, default='')
@@ -197,9 +199,12 @@ class Orders(models.Model):
     physician_genelist = models.TextField(null=True, blank=True)
     pertinent_negative = models.TextField(null=True, blank=True)
     phenotype = models.CharField(max_length=300, null=True, blank=True)
+    genelist = models.CharField(max_length=300, null=True, blank=True)
     desc = models.TextField(blank=True, null=True)
-    # report_secondary_findings = models.CharField(max_length=200, null=True, blank=True, default='')
+    secondary_findings_flag = models.CharField(max_length=20, null=True)
+    secondary_findings_note = models.CharField(max_length=200, null=True, blank=True)
     flag = models.CharField(max_length=200, null=True, blank=True, default='')
+    overall_result = models.ForeignKey('OrderResult', related_name='OrderResult', on_delete=models.CASCADE, null=True)
 
     def __unicode__(self):
         return self.order_name
@@ -254,12 +259,13 @@ class NoteCategory(models.Model):
         return self.category_name
 
 
+# need update - Young / category and patient
 class Notes(models.Model):
     writer = models.ForeignKey(User, related_name='writer', blank=True, null=True, default='')
     update_time = models.CharField(max_length=200, default=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     category = models.ForeignKey('NoteCategory', related_name='NoteCategory', on_delete=models.CASCADE, default=1)
     order = models.ForeignKey('Orders', on_delete=models.CASCADE, blank=True, null=True, default='')
-    patient_id = models.CharField(max_length=100, default='')
+    patient = models.ForeignKey('Patients', on_delete=models.CASCADE, null=False, default=1)
     recipient = models.ForeignKey(User, related_name='recipient', blank=True, null=True, default='')
     recipients = models.CharField(max_length=400, blank=True, null=True, default='')
     note = models.TextField(blank=True)
@@ -278,55 +284,34 @@ class SampleOrderRel(models.Model):
     order = models.ForeignKey('Orders', on_delete=models.CASCADE, null=False)
     relation = models.ForeignKey('SORelations', on_delete=models.CASCADE, null=False)
     patient = models.ForeignKey('Patients', on_delete=models.CASCADE, null=False, default=1)
-    container = models.CharField(max_length=20, null=True)             # adding to sample when lab choose container for the sample
+    container = models.CharField(max_length=20, null=True)  # adding to sample when lab choose container for the sample
 
 
-############################################################################################################# old version
+# ============================================== for QC Metrics ===========================================
 
 
-class PatientOrderPhenoList(models.Model):
-    order = models.ForeignKey(Orders, related_name="pheno_order", on_delete=models.CASCADE, default=1)
-    pheno_checklists = models.CharField(max_length=400, null=True, blank=True)   # list of phenotypes belong to order / patient " id,id,id,, "
-    pheno_valuelists = models.CharField(max_length=4000, null=True, blank=True)  # list of phenotypes belong to order / patient { id, value }
+class Threshold(models.Model):
+    name = models.CharField(max_length=50, null=True)
+    current_threshold = models.IntegerField(null=False, default=1)
+    create_date = models.DateTimeField(null=True, default=datetime.now)
+    threshold_json = JSONField(default=dict)
 
 
-class PatientOrderPhenoType(models.Model):
-    order = models.ForeignKey('Orders', on_delete=models.CASCADE, default=1)
-    patient = models.ForeignKey('Patients', on_delete=models.CASCADE, default=1)
-    phenotype = models.ForeignKey('PhenoTypes', on_delete=models.CASCADE, default=1)
+class QCResults(models.Model):
+    sample = models.ForeignKey('Samples', on_delete=models.CASCADE, null=False)
+    threshold = models.ForeignKey('Threshold', on_delete=models.CASCADE, null=False)
+    run_id = models.CharField(max_length=100, null=False)
+    pass_fail = models.BooleanField(default=False, null=False)
+    result_json = JSONField(default=dict, null=False)
+    process_date = models.DateTimeField(null=False, default=datetime.now)
+    result_details = models.TextField(null=True)
 
 
-PHENOTYPE_TYPE = (
-    ('TEXT', 'Text Input'), ('IMAGE', 'Image File'), ('FILE' , 'Text / Scan File'), ( 'ETC', 'ETC'), ( 'GENELIST', 'Genelists')
-)
-
-
-class PhenoTypes(models.Model):
-    date = models.CharField(max_length=200, default=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    name = models.CharField(max_length=200, default='Phenotype')
-    type = models.CharField(max_length=10, choices=PHENOTYPE_TYPE, default='TEXT')
-    desc = models.CharField(max_length=200, default='..')
-    image = models.ImageField(max_length=400, upload_to=settings.MEDIA_ROOT+'/Phenotypes/',  null=True, blank=True)
-    geno_list = models.CharField(max_length=400, blank=True, null=True)
-
-    def __unicode__(self):
-        return self.name
+# ==========
 
 
 class Pedigree(models.Model):
-    patient = models.ForeignKey('Patients', null=False, default=1)
-    pedigree_json = models.CharField(max_length=2000, default='[]')
-    pedigree_image = models.ImageField(max_length=400, upload_to=settings.MEDIA_ROOT+'/Pedigree/',  null=True, blank=True)
-
-
-#################
-class TrackingLog(models.Model):
-    date = models.CharField(max_length=50, null=False,default=timezone.now())
-    owner = models.ForeignKey(User, default=1)
-    type = models.CharField(max_length=200, blank=True)
-    sample = models.ForeignKey('Samples', on_delete=models.CASCADE, default=1)
-    order = models.ForeignKey('Orders', on_delete=models.CASCADE, default=1)
-
-    # def log(self):
-    #     self.date = timezone.now()
-    #     self.save()
+        patient = models.ForeignKey('Patients', null=False, default=1)
+        pedigree_json = models.CharField(max_length=2000, default='[]')
+        pedigree_image = models.ImageField(max_length=400, upload_to=settings.MEDIA_ROOT + '/Pedigree/', null=True,
+                                           blank=True)

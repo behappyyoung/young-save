@@ -38,6 +38,10 @@ td, th {
     }]);
 
 
+jQuery(document).ready(function() {
+
+        $('#tabs').tabs();
+});
 
 </script>
 <div ng-controller="analysissController" class="analysiss">
@@ -45,16 +49,27 @@ td, th {
 <div class="">
 
 
-
-	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-analyze.png" /> analysis : {$ analysis['template'] $}
+	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-analyze.png" /> analysis : {$ analysis['template']['name'] $}
 
 	</div>  
 
-	<div>
+	<div class="tabs analysis-tabs" id="tabs">
+        <ul>
+            <li><a href="#showtable" class="showtable" > Table </a></li>
+            <li><a href="#showjson" class="showjson" > Json  </a></li>
 
+        </ul>
+            <div id="showtable" class="tab">
+                <table class="table table-bordered table-striped table-hover">
+                    <tr ng-repeat="(key, value) in analysis">
 
+                       <td>  {$ key $} </td><td> {$ value $}</td>
+                    </tr`>
+                </table>
+            </div>
+            <div id="showjson" class="tab">
                  <div id="jjson" class="jjson"></div>
-
+            </div>
 
 	</div>	
    

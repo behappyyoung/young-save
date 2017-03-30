@@ -1,0 +1,232 @@
+{% extends "tracker/tracker_base.html" %}
+{% block content %}
+
+<style type="text/css">
+ button{
+    margin: 5px auto;
+    float: right;
+}
+table.files.table{
+	background-color: transparent;
+	    font-size: small;
+}
+.files td{
+	overflow-wrap: break-word;
+	word-break: break-all;
+}
+</style>
+
+<script type="text/javascript">
+	  gimsApp.controller('trackerController', ['$scope', function($scope) {
+                {% autoescape off %}
+                          $scope.workflowList = [];
+
+                         $scope.workflows = JSON.parse('{{ workflows }}');
+                         for(var i=0;i<$scope. workflows.length; i++){
+                                $scope.workflows[i].fields.id = $scope.workflows[i].pk;
+                                $scope.workflowList.push($scope. workflows[i].fields);
+                         }
+
+                 {% endautoescape %}
+  if(window.location.hostname =='gims-dev.shc.org'){
+                 console.log('workflows', $scope.workflows, 'workflowList', $scope.workflowList);
+ }
+    }]);
+$(function () {
+    'use strict';
+    $('#tabs').tabs();
+    $('#btn-history').on('click', function () {
+        // window.open( '/get_log/order/?oid='+$scope.orders[0].order_id,'History','width=800, height=500, location=no');
+        $.ajax({
+            url:'/mybackend/get_log/sample/',
+            type:'json',
+            method:'POST',
+            data:{'sid': {{so.0.sample_id}} },
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                //file exists
+                
+                var json_data = JSON.parse(data);
+                console.log('success', data, json_data);
+                window.json_data = json_data;
+                var hHtml = '<table class="table table-bordered table-striped table-hover"><thead><th> update  </th><th> action</th><th> by </th></thead><tbody>';
+                for(var i=0; i<json_data.length; i++){
+                    hHtml += '<tr><td class="date">'+json_data[i].fields.update_time+
+                    '</td><td>'+json_data[i].fields.action+'</td><td>'+json_data[i].fields.user_id+'</td></tr>';
+                }
+                $('#popup').html(hHtml);
+                $('.popup').css('display', 'block');
+
+            }
+         });
+    });
+
+});  
+</script>
+
+<div ng-controller="trackerController" class="tracker details">
+
+
+    <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-samples.png" />  {{title}} 
+
+              
+            <button class="btn btn-primary btn-sm  right-button" id="btn-history"> Update History </button> 
+
+              <a href="/sample/{{ so.0.sample_id }}/edit/"><button class="btn btn-primary btn-sm  right-button"> Edit Sample Info </button> </a> 
+
+
+    </div>
+
+    <div class="popup">
+        <button class="close" onclick="$('.popup').css('display', 'none');">X</button>
+        <div id="popup"> </div> 
+    </div>
+
+
+    <div class="details-top">
+	        <div class="main-left text-center">
+	            <div> <div class="label"> ASN </div> <div class="value">{{ so.0.sample.asn }} </div></div>
+	            
+	             <div> <div class="label"> Collection Date  </div> <div class="value">{{ so.0.sample.collection_date }} </div></div>
+	             
+				<div> <div class="label"> Patient  </div> 
+					<div class="value"> 
+					
+{% if 'Interpretation'  in  request.session.role or 'Manager'  in  request.session.role  %}  
+						<a href="/patient/{{ so.0.patient_id }}/">	{{ so.0.patient.first_name }} {{ so.0.patient.last_name }} </a>
+{% else %}
+		--
+{% endif %} 
+				 </div> 
+				</div>
+                  <div> <div class="label"> Status </div> <div class="value">{{so.0.sample.status}} </div></div>
+	        </div>
+	        <div class="main-right text-ceneter">
+	        	
+	            <div> <div class="label"> Source  </div> <div class="value">{{ so.0.sample.source }} </div></div>
+	            <div> <div class="label"> Type </div> <div class="value">{{ so.0.sample.type }}</div></div>
+	             <div> <div class="label"> Volume </div> <div class="value">{{so.0.sample.volume}} </div></div>
+                   <div> <div class="label"> note </div> <div class="value">{{so.0.sample.note}} </div></div>
+	        </div>
+  	</div>
+<!--   	    <div class=" details-bottom" id="details-bottom">
+
+
+                         <div>
+                         <div class="label"> Notes </div>
+                        <div class="value"> {{ so.0.sample.note }} </div>
+                        </div>
+  </div>
+ -->
+   <div class="tabs top-buffer" id="tabs">
+            <ul>
+                <li><a href="#patient" class="tab-menu" > Related Patients  </a></li>
+                <li><a href="#orders" class="tab-menu" > Related Orders  </a></li>
+                
+               <li><a href="#analyses" class="tab-menu" > Related Analyses  </a></li>
+               <li><a href="#files" class="tab-menu" > Related Files  </a></li>
+            </ul>
+             <div class="tab orders" id="orders">
+                    <div  class="sub-sub-title"> 
+
+                     </div>
+                <table class="table table-bordered table-striped table-hover">
+                    <tr>
+                        <th> order  </th>
+                        <th> type </th>
+                        <th> status </th>
+                        <th>  </th>
+                    </tr>
+                    {% for o in so %}
+                    <tr id='{{ o.id }}' class="list">
+
+                        <td><a href="/order/{{ o.order_id }}/">{{ o.order }}</a></td>
+                        <td>{{ o.order.type }}</td>
+                        <td>{{ o.order.status }}</td>
+                        <td> </td>
+                               
+
+
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+             <div class="tab Patient" id="patient">
+                    <div  class="sub-sub-title"> 
+
+                     </div>
+                <table class="table table-bordered table-striped table-hover">
+                    <tr>
+                        <th> Patient  </th>
+                        <th> MRN </th>
+                        <th> DOB </th>
+                        <th> relation </th>
+                    </tr>
+                    {% for p in so %}
+                    <tr id='{{ o.id }}' class="list">
+
+                        <td><a href="/Patient/{{ p.patient.pid }}/">{{ p.patient.first_name }} {{ p.patient.last_name }}</a></td>
+                        <td>{{ p.patient.mrn }}</td>
+                        <td>{{ p.patient.dob }}</td>
+                        <td> {{ p.relation }}
+                               
+
+
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            <div class="sub-sub-title tab" id="analyses"> 
+    		 	 <table class="table table-bordered table-striped table-hover">
+	 	  			<tr>
+
+	 	  				<th> Analysis ID </th>
+			            <th> Workflow ID </th>
+			            <th> Run Time </th>
+			            <th> Related Orders </th>
+			            <!-- <th> Result </th> -->
+
+					</tr>
+					<tr ng-repeat="wf in workflowList "  id='{$ wf.id $}' class="sample">
+			            <td><a href="{{LOOMURL}}run-requests/{$ wf.analysisID $}/">{$ wf.analysisID $}</a></td>
+			            <td><a href="{{LOOMURL}}abstract-workflows/{$ wf.workflowID.split('@')[1] $}/">{$ wf.workflowID $}</a></td>
+			            <td>{$ wf.acc_time $}</td>
+			            <td>{$ wf.relOrder $}</td>
+			            <!-- <td>{$ wf.loomResponse $}</td> -->
+					</tr>
+				</table>
+			</div>
+			<div class="tab files" id="files">
+					<table class="table table-bordered  files">
+					 	  			<tr>
+
+							            <th> File Name </th>
+							            <th> type </th>
+							            <th> Loom ID </th>
+							            <th> Location </th>
+
+									</tr>
+									{% for sf in files %}
+									<tr >
+
+							            <td>{{ sf.file_name }}</td>
+							             <td>{{ sf.file_type }}</td>
+							            <td>{{ sf.loom_id }}</td>
+							             <td>{{ sf.file_location }}</td>
+
+									</tr>
+									{% endfor %}
+					</table>
+				
+			</div>
+    </div>
+
+
+
+</div>
+{% endblock content %}

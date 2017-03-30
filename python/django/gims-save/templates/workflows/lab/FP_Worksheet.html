@@ -1,0 +1,506 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+{% load staticfiles %}
+ <script src="{% static 'JS/jquery.fileupload.js' %}"></script>
+
+<style>
+
+td, th {
+    padding: 5px;
+
+}
+.for-print{
+    /*display: none;*/
+}
+.print-only{
+  display: none;
+}
+.tube{
+    display: inline-block;
+    width: 100px;
+    max-height: 500px;
+}
+.intube{
+    display: inline-block;
+    width: 100px;
+    height: 40px;
+    background-color: white;
+    margin: 1px;
+    vertical-align:top;
+    text-align: center;
+    font-size: 12px;
+    padding-top: 5px;
+}
+.sQREDO{
+    border:2px solid orange;
+    color:blue;
+}
+.wQREDO{
+    color:blue;   
+}
+.FFAIL{
+    color:red;
+}
+.final-values{
+  text-align: right;
+}
+.final-values div label{
+  width: 200px;
+}
+.final-values div input{
+  width: 40px;
+}
+.table-wrapper{
+  max-height: 1000px;
+  overflow: auto;
+}
+.ifcmap{
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: white;
+  display: none;
+  padding: 100px 200px;
+    z-index: 99;
+}
+.ifcmap table tr td, .ifcmap table tr th{
+  padding: 0;
+}
+table.platemap {
+  text-align: center;
+}
+.platemap .column{
+  min-width: 180px;
+   text-align: center;
+   border: solid 1px gray;
+}
+
+table.platemap td.column{
+   padding:0;
+   border: solid 1px gray;
+  vertical-align: middle;
+}
+table.platemap .extra-column{
+   padding:0;
+  min-width: 30px;
+   background-color: #ccc;
+   border: solid 1px gray;
+  vertical-align: middle;
+}
+table.platemap th.column-1, table.platemap th.column-2{
+  background-color: Yellow;
+} 
+table.platemap th.column-3, table.platemap th.column-4{
+  background-color: Green;
+} 
+table.platemap th.column-5, table.platemap th.column-6{
+  background-color: Orange;
+} 
+.assay_inlets{
+  float: left;
+}
+.sample_inlets{
+  float: right;
+}
+.assay_inlets table {
+  width: 400px;
+}
+.sample_inlets table {
+  min-width: 600px;
+}
+.assay_inlets table tr td, .sample_inlets table tr td{
+  padding: 0;
+}
+table.assay_inlets_table .first{
+   background-color: rgba(148, 148, 255, 1);
+}
+table.assay_inlets_table .second_row .first{
+   background-color: rgba(148, 148, 255, 0.5);
+}
+table.assay_inlets_table .second{
+  background-color: rgba(100, 100, 100, 1);
+}
+table.assay_inlets_table .second_row .second{
+  background-color: rgba(100, 100, 100, 0.5);
+}
+table.assay_inlets_table .third{
+  background-color: rgba(243, 236, 24, 1);
+}
+table.assay_inlets_table .second_row .third{
+  background-color: rgba(243, 236, 24, 0.5);
+}
+table.sample_inlets_table .first{
+   background-color: rgba(247, 218, 79, 1);
+}
+table.sample_inlets_table .second_row .first{
+   background-color: rgba(247, 218, 79, 0.5);
+}
+table.sample_inlets_table .second{
+  background-color: rgba(120, 255, 120, 1);
+}
+table.sample_inlets_table .second_row .second{
+  background-color: rgba(120, 255, 120, 0.5);
+}
+table.sample_inlets_table .third{
+  background-color: rgba(243, 135, 24, 1);
+}
+table.sample_inlets_table .second_row .third{
+  background-color: rgba(243, 135, 24, 0.5);
+}
+.middle_map{
+    height: 400px;
+    width: 1300px;
+}
+#ifc_chip{
+  height: 100px;
+  width: 100px;
+  background-color: rgba(148, 148, 255, 1);
+  display: inline-block;
+    margin: auto;
+     position: relative; 
+    top: 100px;
+        text-align: center;
+    left: 80px;
+    vertical-align: middle;
+    padding: 40px 10px;
+}
+table.assay_plate_table th.column-1, table.assay_plate_table th.column-2{
+  background-color: rgba(148, 148, 255, 1);
+} 
+table.assay_plate_table th.column-3, table.assay_plate_table th.column-4{
+  background-color: rgba(100, 100, 100, 1);
+} 
+table.assay_plate_table th.column-5, table.assay_plate_table th.column-6{
+  background-color: rgba(243, 236, 24, 1);
+} 
+</style>
+<script type="text/javascript">
+	gimsApp.controller('workflowsController', ['$scope', '$http', function($scope, $http) {
+                {% autoescape off %}
+                      $scope.platemap = JSON.parse('{{platemap}}');
+                       $scope.worksheet = JSON.parse('{{worksheet}}');
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+        console.log('worksheet', $scope.worksheet);
+ {% endif %}
+
+   
+ 	// var tubedetails = ' <table class="table table-stripped text-center"> <tr><th> tube number </th>  <th> asn </th> <th> container # </th>  </tr>';
+         $scope.redo_list=[];
+        $scope.concentration = 60;
+        $scope.volume = 100;
+        $scope.count = 0;
+        $scope.get_count = function(i, addone=false){
+          if(addone){
+            return parseInt(i/8) + 1  
+          }
+          return parseInt(i/8)
+
+        }
+        $scope.char_list = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+        $scope.clickVolume = function(){
+          confirm('Are you Changing volume?');
+
+        }
+        $scope.show_map = function(){
+            $('#ifcmap').css('display', 'block');
+      }
+      $scope.hide_map = function(){
+        $('#ifcmap').css('display', 'none');
+      }
+
+      $scope.print_ifcmap = function(){
+         var divElements = $('.ifcmap_print').html();
+         var title = 'IFC Map - {{workflow.name}}' ;   
+            var printWindow = window.open("", "_blank", 'hheight=800,width=1150');
+
+        
+        printWindow.document.open();
+
+        printWindow.document.write('<html><head><title> '+ title +' </title><link rel="stylesheet" type="text/css" href="/static/CSS/print-lab-ifcmap.css?v=0310"></head> \
+                                <body><div id="printingDiv" class="printingDiv">');
+   
+        printWindow.document.write(divElements);
+        printWindow.document.write('</div></body></html>');
+
+                // if(location.hostname != 'gims-dev.shc.org'){
+                             setTimeout(function() {
+                                 printWindow.print();
+                                 printWindow.close();
+
+                             }, 100);
+                // }
+                    
+
+    }
+
+
+    $scope.export_ifcmap = function(){
+        var divElements = $('.ifcmap_print').html();
+         var title = 'IFC Map - {{workflow.name}}' ;  
+        dom_parser = new DOMParser().parseFromString(divElements, 'text/html');
+
+        // documentElement always represents the root node
+        window.dom_parser = dom_parser;        
+        table = dom_parser.documentElement.childNodes[1].childNodes[0];
+         
+        var csvContent = "data:text/csv;charset=utf-8,";
+
+        csvContent +=   "Genotyping Genotyping (Fluidigm) IFC Map\r\n"
+        csvContent +=   "Sample Pre-Mix plate\r\n"
+        csvContent += exportTableToCSV( $('.platemap'));     
+        csvContent += "\r\n"
+        csvContent += "\r\n"
+        csvContent +=   "Assay Inlets\r\n"
+        csvContent += exportTableToCSV( $('.assay_inlets'));     
+        csvContent += "\r\n"
+        csvContent += "\r\n"
+        csvContent +=   "Sample Inlets\r\n"
+        csvContent += exportTableToCSV( $('.sample_inlets'));     
+        csvContent += "\r\n"
+        csvContent += "\r\n"
+        csvContent +=   "10X Assay Plate\r\n"
+        csvContent += exportTableToCSV( $('.assay_plate'));     
+        csvContent += "\r\n"
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", title + ".csv");
+        document.body.appendChild(link); // Required for FF
+
+       link.click();
+    }
+
+}]);
+
+$(function () {
+    'use strict';
+    // Change this to the location of your server-side upload handler:
+           var uploadUrl = "/lab/uploadfile/fp/";
+            $('#fileupload').fileupload({
+                url: uploadUrl,
+                dataType: 'json',
+                formData: {type: '{{title}}', id:'{{workflow.id}}', file_type:'Data File'},
+                done: function (e, data) {
+                    console.log(e, data, data.result);
+                   
+                    if(data.result='Done'){
+                       user_message('Status', 'File Uploaded / Processed');
+                      location.reload();
+                  }else{
+                    user_message('error', data.result);
+                  }
+                },
+                 progress:function(e, data){
+                   user_message('Status', 'Processing file - please wait');
+                }
+            });
+
+
+
+    var assay_inlets_text =' <table class="table table-stripped text-center assay_inlets_table">';
+
+    var char_list = ['','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+    for(var i=1; i<=8; i++){
+
+      assay_inlets_text +=  ' <tr class="first_row"><td> '+ char_list[i]+ '1</td><td class="first column"> Assay'+i+'</td> <td> '+ char_list[i]+ '3 </td><td class="second column"> Assay'+(i+16)+' </td> <td> '+ char_list[i]+'5 </td><td class="third column"> Assay'+(i+32)+' </td></tr>';
+      assay_inlets_text +=  ' <tr class="second_row"><td> '+ char_list[i]+ '2</td><td class="first column"> Assay'+(i+8)+' </td> <td> '+ char_list[i]+ '4 </td><td class="second column"> Assay'+(i+24)+' </td> <td> '+ char_list[i]+'6 </td><td class="third column"> Assay'+(i+40)+' </td></tr>'; 
+    }
+    
+
+      assay_inlets_text += '</table>';
+
+
+      $('#assay_inlets').html(assay_inlets_text);
+
+
+ 
+
+});
+
+</script>
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="">
+
+
+
+	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" /> {{title}} Details for Project : {{workflow.name}}
+    <div class="print-title print-only">  Fingerprinting worksheet : {{workflow.name}} </div>
+    <a class="button right-button btn btn-sm" href="/lab/workflows/#{{title}}"> Back </a>
+	</div>  
+
+        <div id="for-print"  class="for-print " >
+	        <table class="table table-bordered text-center">
+                <tr>
+                    <th> ID </th>
+                    <th> Name </th>
+                    <th> start </th>
+                    <th> updated </th>
+                    <th> status </th>
+                    <th> SID </th>
+                   
+
+                </tr>
+
+
+                    <tr class="workflow">
+                        <td>{{workflow.id}}</td>
+                        <td>{{workflow.name}}</td>
+                        <td>{{ workflow.created_date }}</td>
+                        <td>{{ workflow.updated_date }}</td>
+                        <td>{{ workflow.status.labstatus_name }}</td>
+                        <td> {{ workflow.username }}</td>
+                     </tr>
+            </table>
+
+        <div>
+{% load custom_filter %}
+        <div class="final-values print-items">
+           <div><label for="concentration"> Final Concentration (ng/ul): </label> <input type="text" name="concentration" ng-model="concentration" value="{$ concentration $}" /></div>
+           <div><label for="volume"> Final Volume (ul): </label> <input ng-click="clickVolume();" type="text" name="volume" ng-model="volume"  value="{$ volume $}"/></div>
+        </div>
+        <div class="sub-sub-title text-center top-buffer">  Fingerprinting Normalization Worksheet  </div>
+        <div class="actions">
+              <button class="btn btn-primary btn-sm" onclick="print_div(true);"> Print </button> 
+               <button class="button btn btn-primary btn-sm" onclick="save_div();" id="button_save"> Export to CSV </button>
+
+               {% if redo_list %}
+               <button class="btn btn-primary btn-sm right-button" ng-click="newWork()"> Redo Failed ones </button>    
+               {% endif %}
+               <button class="right-button button btn btn-primary btn-sm" ng-click="show_map();" id="show_map"> Create Fluidigm Format </button>
+              <label for="fileupload" class="btn btn-success btn-sm fileinput-button" id="label-fileupload"> Upload Data File</label>
+              <input class="btn btn-success fileinput-button" id="fileupload" type="file" style="visibility: hidden;" name="files" / >
+         </div>
+        <div class="table-wrapper">
+  	        <table class="table table-bordered table-striped table-hover text-center for-print">
+                  <tr>
+                  	<th> Well # </th>
+                      <th> Sample ans </th>
+                      <th> container </th>
+                      <th> patient name  </th>
+                      <th> Original sample conc.(ng/ul) </th> 
+                      <th> DNA (ul) </th>
+                      <th> Water (ul) </th>
+                      <th>Status</th>
+                  </tr>
+
+
+                   
+                      <tr ng-repeat="ws in worksheet" class="workflow worksheet {$ ws.status $}" >
+                          
+                          <td>  {$ char_list[ ($index % 8)] $}{$  get_count($index, true) $}  </td>
+                          <td>{$ ws.asn $}</td>
+                          <td>{$ ws.container $}</td>
+                          <td> {$ ws.pname $}   </td>
+                          <td> {$ ws.result $} </td>
+                          <td> {$ (volume * concentration / ws.result).toFixed(2) $}</td>
+                           <td>{$ (volume -( volume * concentration / ws.result)).toFixed(2) $}</td>
+                           <td > <div> {$ ws.status_name $} </div> </td>
+                       </tr>
+
+              </table>
+            </div>
+
+            </div>
+            </div>
+
+
+            
+
+            <div class="sub-sub-title">
+                Related Files
+            </div>
+            <table class="table table-bordered table-striped table-hover text-center">
+                <tr>
+                    <th> file name</th>
+                    <th> type </th>
+                    <th> upload time </th>
+                    <!-- <th> clould id  </th> -->
+                    <th> url </th>
+                    <th> By</th>
+
+                </tr>
+
+                {% for f in files %}
+                    <tr class="workflow">
+                        <td> {{f.name}}</td>
+                        <td>{{f.file_type}}</td>
+                        <td>{{f.upload_date}}</td>
+                        <!-- <td>{{ f.cloud_id }}</td> -->
+                        <td> <a href="{{ f.url }}" target="_new">{{ f.url }} </a></td>
+                        <td> {{ f.upload_by }} </td>
+                     </tr>
+                 {% endfor %}
+            </table>
+</div>
+
+<div class="ifcmap" id="ifcmap">
+
+    <button class="button btn-primary" ng-click="print_ifcmap();"> Print IFC </button>
+    <button class="button btn-primary" ng-click="export_ifcmap();"> Export to Excel </button>
+    <button class="right-button button btn-primary" ng-click="hide_map();"> X </button>
+<div class="ifcmap_print" id="ifcmap_print">    
+     <div class="sub-sub-title text-center top-buffer"> Genotyping (Fluidigm) IFC Map  </div>
+     <div> Sample Pre-Mix plate </div>
+     <table class="table table-stripped text-center platemap">
+              <tr>
+                <th class=""></th><th class="column-1">1</th><th class="column-2">2</th><th class="column-3">3</th><th class="column-4">4</th><th class="column-5">5</th><th class="column-6">6</th>
+                <th class="column-7 extra-column">7</th><th class="column-8 extra-column">8</th><th class="column-9 extra-column">9</th><th class="column-10 extra-column">10</th><th class="column-11 extra-column">11</th><th class="column-12 extra-column">12</th>
+              </tr>
+              <tr data-ng-repeat="i in [0,1,2,3,4,5,6,7]">
+                       <td> {$ char_list[i] $} </td><td class=" column"> {$ platemap[i] $}</td> <td class=" column"> {$ platemap[i+8] $} </td><td class=" column">{$ platemap[i+16] $} </td>
+                        <td class=" column"> {$ platemap[i+24] $}</td><td class=" column"> {$ platemap[i+32] $} </td><td class=" column"> {$ platemap[i+40] $} </td>
+                        <td class="extra-column"></td><td class="extra-column"></td><td class="extra-column"></td><td class="extra-column"></td><td class="extra-column"></td><td class="extra-column"></td>
+              </tr>
+     </table>
+     <div class="maps middle_map">
+      <div class="assay_inlets">
+          <div> Assay Inlets </div>
+          <div id="assay_inlets"></div>
+      </div>
+      <div id="ifc_chip">
+          IFC Chip
+      </div>
+      <div class="sample_inlets">
+             <div> Sample Inlets </div>
+            <div id="sample_inlets">
+                <table class="table table-stripped text-center sample_inlets_table">
+                <tbody data-ng-repeat="i in [0,1,2,3,4,5,6,7]" >
+                 <tr class="first_row"  >
+                        <td> {$ char_list[i] $}1 </td><td class="first column"> {$ platemap[i] $}</td> <td> {$ char_list[i] $}3 </td><td class="second column">{$ platemap[i+16] $} </td> <td> {$ char_list[i] $}5 </td><td class="third column"> {$ platemap[i+32] $} </td></tr>
+                         
+                </tr>
+                <tr  class="second_row"  >
+                          <td> {$ char_list[i] $}2</td><td class="first column"> {$ platemap[i+8] $}</td> <td> {$ char_list[i] $}4 </td><td class="second column"> {$ platemap[i+24] $}</td> <td> {$ char_list[i] $}6 </td><td class="third column"> {$ platemap[i+40] $} </td></tr>
+                         </tr>
+                         </tbody>
+              </table>
+            </div>
+      </div>
+
+
+
+    </div>
+    <div class="assay_plate">
+        <div> 10X Assay Plate</div>
+        <table class="table table-stripped text-center assay_plate_table">
+              <tr>
+                <th class=""></th><th class="column-1">1</th><th class="column-2">2</th><th class="column-3">3</th><th class="column-4">4</th><th class="column-5">5</th><th class="column-6">6</th>
+              </tr>
+              <tr data-ng-repeat="i in [1,2,3,4,5,6,7,8]">
+                       <td> {$ char_list[i-1] $} </td><td class=" column"> Assay{$ i $}</td> <td class=" column"> Assay{$ i+8 $} </td><td class=" column">Assay{$ i+16 $} </td>
+                        <td class=" column"> Assay{$ i+24 $}</td><td class=" column"> Assay{$ i+32 $} </td><td class=" column">Assay{$ i+40 $} </td>
+              </tr>
+        </table>
+    </div>
+</div>
+</div>
+</div>
+
+
+  {% include "com/message_modal.html" %}
+{% endblock %}

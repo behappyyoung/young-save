@@ -1,0 +1,22 @@
+  <style>
+  .lab-header-menu{
+    border-radius: 10px;
+  }
+  </style>     
+       <div class="flex">
+
+          
+           <div class="sub-title flex-left "> <img class="icon" src="/static/IMAGES/icon-microscope.png" />{{title}} </div>  
+          <div class="flex-right" style="">
+                  <ul class="nav navbar-nav right-button btn-default lab-header-menu">
+                             <li class="dropdown" id="dropdown-li-main">
+                                 <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="dropdown-toggle-mainmenu">  Lab Workflows <span class="caret"></span> </a>
+                                 <ul class="dropdown-menu" >
+                                    <li>  <a href="{% url 'lab_workflows_list' %}" class="right-button btn-sm"> Outstanding Lists  </a> </li>
+                                    <li>  <a href="{% url 'lab_workflows_dash' %}" class="right-button btn-sm"> Dashboard  </a> </li>
+                                    <li>  <a href="{% url 'lab_workflows' %}" class="right-button btn-sm"> Workflows  </a> </li>
+                                 </ul>
+                                </li>
+                   </ul>
+                   </div>
+       </div>

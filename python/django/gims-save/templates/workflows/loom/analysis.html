@@ -1,0 +1,423 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+
+
+
+<style>
+table{
+	background-color: white;
+}
+table tr td, table tbody tr th {
+    padding: 5px;
+}
+.step2, .step3, .tab button{
+	pointer-events: none;
+}
+.menu-search{
+	float: right;
+	margin: 10px 0;
+	display: flex;
+}
+
+.run_input{
+	line-height: 30px;
+}
+
+</style>
+
+<script type="text/javascript">
+	gimsApp.controller('workflowsController', ['$scope', '$http', function($scope, $http) {
+                {% autoescape off %}
+
+                          $scope.workflows ={{ workflows }};
+
+                          for(var i=0;i<$scope.workflows.length;i++){
+
+                          	if($scope.workflows[i].inputs){
+                          		$scope.workflows[i].inputsJson = JSON.parse($scope.workflows[i].inputs);
+                          		// $scope.workflows[i].inputsJson = $scope.workflows[i].inputs;
+                          	}else{
+                          		$scope.workflows[i].inputsJson = [];
+                          	}
+                          	
+
+                          	if($scope.workflows[i].fixed_inputs){
+                          		$scope.workflows[i].fixed_inputsJson = JSON.parse($scope.workflows[i].fixed_inputs);
+                          	}else{
+                          		$scope.workflows[i].fixed_inputsJson = [];
+                          	}
+
+                          }
+                          var None = 'none';
+                          // $scope.runrequests = {{running}};
+                         // $scope.sampleList=[];
+                         // $scope.so_list = JSON.parse(decodeURIComponent('{{so_list}}'));
+                         // $scope.samplefiles = {{ samplefiles }};
+
+
+                 {% endautoescape %}
+if(window.location.hostname =='gims-dev.shc.org'){
+                console.log('so_list', $scope.so_list,  'workflows', $scope.workflows);
+ }
+                 $scope.chooseWorkflow = function(wf){
+                 		window.sessionStorage['wf'] = JSON.stringify(wf);
+                 		var allwf = $('.wf');
+                 		var cwf;
+                 		for ( var i=0; i<allwf.length;i++){
+                 			cwf = allwf[i];
+                 			// console.log(cwf, cwf.id, wf.wid, cwf.wid != wf.wid);
+                 			 if(cwf.id != wf.wid ){
+                 			 	$(cwf).removeClass('info');
+                 			 }else{
+                 			 	$('#'+wf.wid).addClass('info');
+                 			 }
+                 			
+                 		}
+
+                 		$('#step1 .btn').addClass('btn-primary').css('pointer-events', 'all');
+                 		$('.step1').css('pointer-events', 'all');
+                 }
+                 // Choose multiple samples
+                 $scope.chooseSample = function(sample){
+                 		window.sessionStorage['sample'] = JSON.stringify(sample);
+                 		var allwf = $('.sample');
+                 		var sid;
+                 		var cur_id =sample.sample_id+'_'+sample.order_id;
+                 		for ( var i=0; i<allwf.length;i++){
+                 			sid = allwf[i];
+                 			 if(sid.id != cur_id ){
+                 			 	$('#'+sid.id ).removeClass('info');
+                 			 }else{
+                 			 	console.log('#'+cur_id);
+                 			 	$('#'+sid.id ).addClass('info');
+                 			 }
+                 			
+                 		}
+                 		$('#step2 .btn').addClass('btn-primary').css('pointer-events', 'all');
+
+				    	$('.step2').css('pointer-events', 'all');
+
+                 }
+                 $scope.findFiles = function(storageID){
+                 	var filenames = '';
+                 	var ids = storageID.split('_');
+                 		for(var j=0; j<$scope.samplefiles.length;j++){
+                 			if( ids[0] == $scope.samplefiles[j].sample_id && ids[1] == $scope.samplefiles[j].order_id ){
+                 				filenames += 'file_name : ' + $scope.samplefiles[j].file_name +' <br /> file_type : ' + $scope.samplefiles[j].file_type +' <br /> File ID : '+ $scope.samplefiles[j].loom_id;	
+                 			}
+                 				
+                 		}
+                 		 
+                 	console.log('filenames', filenames);
+                 	return filenames;
+                 }
+                 $scope.getSampleName = function(storageID){
+                 	var ids = storageID.split('_');
+                 	for(var i=0; i<$scope.samples.length; i++){
+                 		if($scope.samples[i].sample_id == ids[0] && $scope.samples[i].order_id == ids[1]){
+                 			return $scope.samples[i].asn + '/' + $scope.samples[i].order_name;
+                 		}
+                 	}
+                 }
+                 $scope.chooseFilesHtml = function(sample, channel){
+                 	$http({
+ 			
+    						headers: {
+   							'Content-Type': 'application/json'
+ 							},
+    						method:'POST', 
+    						url:'/mybackend/get_samplefiles/', 
+    						data:{
+    							'sid': sample.sample_id, 
+    						}
+    					}).then(function(response){
+    						console.log(response, response.data);
+    						if(response.data.status_code == 200 ){
+    						
+    				    			var files = JSON.parse(response.data.file_data);
+
+    							
+				                 	var fileChooseHtml='';
+				                 	for(var i=0; i<files.length;i++){
+				                 		
+				                 			fileChooseHtml += ' <option value="'+files[i].file_name+'@'+files[i].loom_id+'">  '+ files[i].file_name+'</option>';		
+				                 		
+				                 	}
+				                 	var fs = $('.file_select');
+				                 	for(var i=0; i<fs.length;i++){
+				                 		fs[i].innerHTML = fileChooseHtml;
+				                 	}
+    						
+    						}else{
+    							user_message('error', response.data.status_message);
+
+
+					    	}		
+					    });
+                 };
+                $scope.SampleOrderHtml = function(order_typeid=''){
+                	user_message('status', 'Getting Samples.. please wait..');
+
+                	var query = (order_typeid =='') ? '':'order__type_id='+order_typeid;
+                 	$http({
+ 			
+    						headers: {
+   							'Content-Type': 'application/json'
+ 							},
+    						method:'POST', 
+    						url:'/mybackend/get_sampleorderlist/', 
+    						// data:{sid: 9}
+    						data:{query : query}
+    					}).then(function(response){
+    						console.log(response, response.data);
+    						if(response.data.status_code == 200 ){
+    							// 
+    							console.log(response.data);
+    							// $scope.so_list = response.data.return_data;
+    							$scope.so_list = JSON.parse(decodeURIComponent(response.data.return_data));
+    							if($scope.so_list.length ==0){
+    								user_message('status', 'No Samples Available');
+    							}else{
+    								$('#gimsModal').modal('hide');
+    							}
+    						
+    						}else{
+    							user_message('error', response.data.status_message);
+
+
+					    	}		
+					    });
+                 }
+                 
+
+                	$scope.inputChannels =[];
+                   $scope.goNext= function(step){
+
+				    	$('.'+step).click();
+				    	if(step =='step2'){
+				    		
+				    		var c_wf = JSON.parse(window.sessionStorage.wf);
+				    		console.log(c_wf);
+
+				    		$scope.SampleOrderHtml(c_wf.order_typeid);
+				    	}else if(step =='step3'){
+
+				    		var c_wf = JSON.parse(window.sessionStorage.wf);
+				    		var c_sample = JSON.parse(window.sessionStorage.sample);
+				    		var innerHTML = '', file_innerHTML='';
+				    		$('#run_workflow').html('<td> Name : <span id="wf_name">' + c_wf.name + ' </span><br /> Version :  ' + c_wf.version + ' <br />  Type : ' + c_wf.tname + '<br />  ID :  <span id="wf_id">' + c_wf.wid + '</span></td>');
+				    		var loomID = c_sample.number == '' ? c_sample.asn : c_sample.number;
+							$('#run_samples').html('<td> Sample : <span id="sample_asn">' + c_sample.asn + ' </span> <br /> Order : <span id="order_name"> ' + c_sample.pname + ' </span> <br /> Type : ' + c_sample.order_type + '</td>');
+								// + ' <br /> LoomID : <span id="sampleid" >' + c_sample.number + '</span></td>');			
+							for(var i=0;i<c_wf.inputsJson.length;i++){
+								if(c_wf.inputsJson[i].type != 'file'){
+
+									innerHTML += '<div>' + c_wf.inputsJson[i].channel + '  : <input id="'+c_wf.inputsJson[i].channel+'" class="input_string" /></div>';
+									$scope.inputChannels.push(c_wf.inputsJson[i].channel);
+								}else{
+									file_innerHTML += '<div>' + c_wf.inputsJson[i].channel + '  : <select id="'+c_wf.inputsJson[i].channel+'" class="file_select" > </select></div>';
+									$scope.inputChannels.push(c_wf.inputsJson[i].channel);
+								}
+								
+							}
+							$('#run_strings').html(innerHTML);
+							$('#run_files').html(file_innerHTML);
+							$scope.chooseFilesHtml(c_sample);
+						 	$('select').change(function(){
+									$('#run_analysis').addClass('btn-primary').css('pointer-events', 'all');
+									
+								});
+
+				    	}
+				    }
+
+				    $scope.showInput = function(inStr){
+				    	var inJson = JSON.parse(inStr);
+				    	console.log(inStr, inJson);
+				    	var returnHtml ='';
+				    	for(var i=0; i< inJson.length;i++){
+				    		returnHtml += inJson[i].type;
+				    	}
+				    	return returnHtml
+				    }
+					$scope.method = 'POST';
+    				$scope.url = '{{LOOMURL}}run-requests/';	
+    				$scope.loomLog = function(aid, wfid, response, rundata){
+    					var sid = $('#sample_asn').html().trim();
+    					var oid = $('#order_name').html().trim();
+    					$http({
+    						headers: {
+   							'Content-Type': 'application/json'
+ 							},
+    						method:'POST', url:'/loomlog/', 
+    						data:{
+    							'wf' : wfid, 
+     							'url' :$scope.url,
+						        'response' : response,
+						        'sid' : sid,
+						        'oid' : oid,
+						        'submit_data' : rundata,
+						        'aid': aid
+    						}
+    					}).then(function(response){
+					    		console.log(response.data);
+					    });
+    				}
+				    $scope.runAnalysis = function(){
+				    	var rundata = {}
+				    	var inputs = [];
+				    	// inputs.push({'channel':'sampleid', 'value': $('#sampleid').html()});
+				    	for(var i=0;i<$scope.inputChannels.length;i++){
+				    		inputs.push({'channel':$scope.inputChannels[i], 
+				    			'data':{ 'contents' : $('#'+$scope.inputChannels[i]).val() } });
+				    	}
+				    	rundata.template = $('#wf_name').html().trim()+'@'+$('#wf_id').html().trim();
+				    	// rundata.template = {'uuid': $('#wf_id').html().trim(), 'name': $('#wf_name').html().trim()}
+				    	rundata.inputs = inputs;
+				    	console.log('rundata', rundata, JSON.stringify(rundata), $scope.fileChannels);
+				    	$http({
+				    		method:$scope.method, 
+				    		url:$scope.url, 
+				    		data:JSON.stringify(rundata)
+				    	}).then(function(response){
+				    		console.log('response', response.data);
+					    		if(response.data.datetime_created){
+					    			$scope.loomLog(response.data.id, response.data.template, response.status+'/'+response.statusText, JSON.stringify(rundata));
+					    			user_message('Submit', 'Run Request Submited - ID : ' + response.data.uuid);
+					    			// alert('Run Request Submited - ID : '+response.data.id);
+									window.location.href='/analyses/';
+					    			
+					    		}
+					    		
+					    	}).catch(function(response){
+					    		console.log('response', response);
+					    		$scope.loomLog('Error', rundata.template, response.status+'/'+response.statusText, response.data);
+					    		alert('Run Failed - '+response.status+'/'+response.statusText);
+					    	});
+				    }
+    }]);
+    $(function(){
+    	$('#tabs').tabs();
+    	sessionStorage.clear();
+    	sessionStorage.rundata = '';
+    	
+   
+
+    });
+
+
+</script>
+<div ng-controller="workflowsController" class="analyses">
+
+
+	<div class="sub-title">  <img class="icon" src="/static/IMAGES/icon-analyze.png" />  run new Analysis </div>
+
+	<div class="tabs" id="tabs">
+	<ul>
+		<li><a href="#step1" class="step1"> Workflows </a></li>
+		<li><a href="#step2" class="step2"> Samples - Orders  </a></li>
+		<li><a href="#step3" class="step3""> Files </a></li>
+	</ul>	
+		<div class="tab" id="step1"> 
+			<div class="menu-search"> <input type="text" ng-model="searchw" /> <button class="btn sm-btn"> Search </button> </div>
+			<table class="table table-striped table-bordered table-hover table-hove-info ">
+				<tr>
+					<th> name </th>
+					<th> ID </th>
+					<th> version </th>
+					<th> type </th>
+					<th> inputs </th>
+					<th> Fixed inputs </th>
+					<!-- <th> run </th> -->
+				</tr>
+				<tr ng-repeat="w in workflows | filter:searchw " ng-click="chooseWorkflow(w);" id='{$ w.wid $}' class="wf" >
+						<td>{$ w.name $}</td>
+						<td>{$ w.wid $}</td>
+						<td>{$ w.version $}</td>
+						<td>{$ w.type_name $}</td>
+						<td>
+							<div ng-repeat="i in w.inputsJson">
+							 	<div> Type : {$ i.type $} </div>
+							 	<div> Channel : {$ i.channel $} </div> 
+							 </div>
+							
+						</td>
+						<td>
+							<div ng-repeat="f in w.fixed_inputsJson">
+							 	<div> Type : {$ f.type $} </div>
+							 	<div> Channel : {$ f.channel $} </div> 
+							 </div>
+							
+						</td>
+				</tr>
+			</table>
+			<div class="text-right">
+					<button  class="next btn" ng-click="goNext('step2');"> Next </button>
+			 </div> 
+		</div>
+		<div class="tab" id="step2"> 
+				<div class="list-table-search">
+					 <input type="text" ng-model="searchs"> <button class="btn btn-sm"> Search </button>
+			    </div>
+				
+				<div class="list-table list-table-short">
+					<table class="table table-striped table-bordered table-hover table-hove-info ">
+						<tr>
+							<th> name </th>
+							<th> asn </th>
+							<th> type </th>
+							<th> order </th>
+							<th> relations </th>
+							<!-- <th> run </th> -->
+						</tr>
+						<tr ng-repeat="s in so_list | filter:searchs" ng-click="chooseSample(s);" id='{$ s.sample_id + "_" +s.order_id $}' class="sample"> 
+							<td>{$ s.pname $}</td>
+							<td>{$ s.asn $}					</td>
+							<td>	{$ s.order_type$}					</td>
+							<td>	{$ s.order_name $}					</td>
+							<td>	{$ s.rel_name $}				</td>
+							<!-- <td> run </td> -->
+						</tr>
+					</table> 
+				</div>
+				<div class="text-right">	
+					<button class="next btn" ng-click="goNext('step3');"> Next </button> 
+				</div>
+		</div>
+		<div class="tab" id="step3" > 
+
+			<table class="table table-striped table-bordered table-hover table-hove-info ">
+				<tr>
+					<th> Workflow</th>
+					<th> Sample / Order </th>
+					<th> Inputs   </th>
+				</tr>
+				<tr>
+					<td> <div class="run_input" id="run_workflow"> </div>  </td>
+					<td> <div class="run_input" id="run_samples"> </div>  </td>
+					<td  > 
+						<div  class="run_input" id="run_strings"> </div>
+						<div> Choose Files </div>
+						<div class="run_input" id="run_files"> </div>  
+					</td>
+				</tr>
+				<tr id="rundiv">
+
+				</tr>
+			</table>
+
+				<div class="text-right">	
+					<button class="next btn" id="run_analysis" ng-click="runAnalysis();"> Run Analysis </button> 
+				</div>			
+		</div>
+	</div>
+</div>
+ <!-- <div> {{ running }}</div> -->
+<!--  <div> {{ fileData }}</div>
+ <div> {{ data }}</div> -->
+
+  {% include "com/message_modal.html" %}
+
+
+{% endblock %}

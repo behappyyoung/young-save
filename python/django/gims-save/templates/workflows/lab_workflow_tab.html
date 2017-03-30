@@ -66,14 +66,9 @@ gimsApp.controller('workflowsController', ['$scope', function($scope) {
 
 <div ng-controller="workflowsController" class="workflows">
 
-<div class="">
+<div class="main">
 
-
-                 <a href="{% url 'lab_main' %}" class="right-button btn btn-default btn-sm"> back to Main </a>
-
-	<div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-microscope.png" />{{title}}
-          
-	</div>  
+    {% include "workflows/com/lab_header.html" %}
 
 	  
 	<div class="search"> 
@@ -99,7 +94,7 @@ gimsApp.controller('workflowsController', ['$scope', function($scope) {
 
             <div>
 
-                <a href="{% url 'quantification' %}" class="right-button btn btn-default btn-sm"> New Quantification </a>
+                <a href="{% url 'quantification' %}" class="right-button btn btn-default btn-sm"> Start New Project </a>
             </div>
         	<table class="table table-bordered table-striped table-hover">
         		<tr>

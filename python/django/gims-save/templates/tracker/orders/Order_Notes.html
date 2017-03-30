@@ -12,6 +12,12 @@
 	form label[for='id_note']{
 		display: block;
 	}
+	.form {
+		margin: 20px auto;
+	}
+	form select[id='id_order'], form label[for='id_order']{
+		display: none;
+	}
 	form input, form select, form .button {
 		width: 350px;
 	}
@@ -42,10 +48,33 @@
 	}
 
 </style>
+<script type="text/javascript">
+	function delete_note(nid) {
+    if(confirm('Are you sure to delete?')){
+        $.ajax({
+            url:'/order/{{oid}}/note/'+nid+'/',
+            type:'json',
+            method:'POST',
+            data:{action: 'Delete'},
+            error: function()
+            {
+                //file not exists
+                 console.log('error');
+            },
+            success: function(data)
+            {
+                if(data=='Done'){
+                    location.reload();
+                }
+            }
+            });
+    }
+ };
 
+</script>
  <div class="sub-title"> <img class="icon" src="/static/IMAGES/icon-orders.gif" />  Add Note for Order : {{form.order}} </div>
 <div>
- 	<div class="sub-sub-title"> Add New Note </div>
+ 	<div class="sub-sub-title"> </div>
             <form action="/order/{{oid}}/notes/" method="post">
                 {% csrf_token %}
                 {{ form }}
@@ -67,6 +96,7 @@
 			<th> Author </th>
 			<!-- <th> recipients</th> -->
 			<th> Note </th>
+			<th> </th>
 		</thead>
 		<tbody>
 			{% for note in notes %}
@@ -77,6 +107,11 @@
 				<td> {{note.writer|cut:"None"}}</td>
 				<!-- <td> {{note.recipients|cut:"None"}}</td> -->
 				<td> {{note.note}}</td>
+				<td> 
+					<a id="go-edit-patientfile" href="/order/{{oid}}/Note/{{note.id}}/"> 
+						<button id="edit-file" class="button btn-sm btn-default" > Edit </button> </a> 
+					<button id="delete-note" class="button btn-sm btn-default" onclick="delete_note('{{ note.id }}')"> Delete </button>
+				</td>
 			</tr>
 			{% endfor %}
 		</tbody>

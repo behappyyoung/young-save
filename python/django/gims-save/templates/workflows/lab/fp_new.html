@@ -1,0 +1,514 @@
+{% extends "workflows/workflows_base.html" %}
+
+{% block content %}
+
+
+
+<style>
+.list-table{
+    max-height: 600px;
+}
+td, th {
+    padding: 5px;
+
+}
+.steps{
+	clear:both;
+}
+
+
+.step2{
+	display: none;
+}
+
+#tubes{
+	display: flex;
+    margin: auto;
+	
+}
+/*#tubes > div{
+ 	width: 450px;
+ 	margin:auto;
+}*/
+.tube{
+	display: inline-block;
+	width: 100px;
+}
+.tubes table th, .tubes table tr td{
+	min-width: 180px;
+}
+.tubes table th.column, .tubes table tr td.column{
+	max-width: 50px;
+}
+.intube{
+	display: inline-block;
+	width: 100px;
+	height: 50px;
+	background-color: white;
+	margin: 1px;
+	vertical-align:top;
+	text-align: center;
+	font-size: 12px;
+	padding-top: 5px;
+    /* background-image: url(/static/IMAGES/icon-beaker.png); */
+    /* background-size: contain; */
+    /* background-repeat: no-repeat; */
+    /* background-position: center; */
+    /* background-blend-mode: luminosity; */
+}
+#dialog{
+	display: none;
+}
+.dialog-input{
+	display: flex;
+	margin: 20px auto;
+	height: 50px;
+}
+.dialog-input input{
+	width: 200px;
+}
+#tube-desc{
+	max-height: 600px;
+	overflow: auto;
+	margin: auto;
+}
+#tube-desc table .tube{
+	width: 100px;
+}
+#tube-desc table .id{
+	width: 250px;
+}
+#tube-desc table tbody td.name{
+	text-align: left;
+	margin-left: 30px;
+	width: 300px;
+}
+.print-only{
+	display: none;
+}
+.actions{
+	text-align: center;
+}
+.actions button{
+	margin: 10px 30px;
+	padding: 10px;
+	width: 150px;
+}
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    text-indent: 1px;
+    text-overflow: '';
+    border: none;
+}
+.platemap select{
+	/*display: none;*/
+}
+.Negative{
+	color:red;
+}
+.Positive{
+	color:blue;
+}
+</style>
+
+
+<script type="text/javascript">
+gimsApp.controller('workflowsController', ['$scope', '$http', function($scope, $http) {
+                {% autoescape off %}
+                            // $scope.samples = {{ samples }};
+                            $scope.s_lists = JSON.parse(decodeURIComponent('{{s_lists}}'));
+                            $scope.sample_size = $scope.s_lists.length;
+                 {% endautoescape %}
+{% if 'gims-dev.shc.org' in request.environ.HTTP_HOST %}
+                 // console.log('samples', $scope.samples);
+ {% endif %}
+ 	$scope.sortType = 'type';
+ 	$scope.chosenSamples = [];
+ 	$scope.checkExist = function(s){
+ 		var index = $scope.chosenSamples.indexOf(s);
+ 		for(var i=0 ; i < $scope.chosenSamples.length;i++){
+ 			if($scope.chosenSamples[i].asn == s.asn){
+ 				return i;
+ 			}
+ 		}
+ 		return "-1";
+ 	}
+ 	$scope.chooseSample = function(s){
+ 		
+ 		// var checked =  $('#'+s.asn).prop('checked') ? false : true;
+ 		// console.log(s.asn, $('#'+s.asn).prop('checked'), checked);
+ 		if($scope.chosenSamples.length < 43){
+ 			// console.log($scope.checkExist(s));
+	 		// var index = $scope.chosenSamples.indexOf(s);
+	 		var index = $scope.checkExist(s);
+	 		if(index > -1){
+	 			$scope.chosenSamples.splice(index, 1);
+	 			$('#'+s.asn).prop('checked', false);
+	 		}else{
+	 			$scope.chosenSamples.push(s);
+	 			$('#'+s.asn).prop('checked', true);
+	 		}
+	 		
+	 		console.log($scope.chosenSamples);
+	 		$scope.next();
+ 		}else{
+ 			alert('meet max');
+ 			$('#'+s.asn).prop('checked', false);
+ 		}
+ 	}
+ 	$scope.current_stage = 1;
+
+ 	$scope.multi_select = function(){
+ 		var checkboxes = $('.checkbox');
+ 		var total_count = $scope.chosenSamples.length;
+ 		var select_count = 0;
+ 		for(var i=0;i<checkboxes.length;i++){
+ 			if($(checkboxes[i]).prop('checked')){
+
+ 			}else if(total_count <42 && select_count <10){
+ 				$(checkboxes[i]).prop('checked', true);	
+ 				total_count++;
+ 				select_count++;
+ 				$scope.chosenSamples.push($(checkboxes[i]).data('s'));
+ 				// console.log($(checkboxes[i]).data('s'));
+ 			}else{
+ 				console.log('meet max');
+
+ 			}
+ 			
+
+ 		}
+ 		$scope.next();
+ 		console.log($scope.chosenSamples);
+ 	}
+ 	$scope.current_cid = '';
+ 	$scope.buffers = [];
+ 	$scope.concentration = 60;
+ 	for(var i=0; i<44;i++){
+ 		$scope.buffers[i] = 'Buffer';
+ 	}
+ 	$scope.buffers[44]='Negative';
+ 	$scope.buffers[45]='Negative';
+ 	$scope.buffers[46]='Normal';
+ 	$scope.buffers[47]='Positive';
+
+ 	$scope.selectText = '<select ng-model="current_cid" ng-change="selectSelect(current_cid);"> <option> Buffer </option> <option> Negative </option> <option> Negative </option> <option> Normal </option> <option> Positive </option> </select>';
+ 	$scope.selectBuffer = function(cid){
+ 		// $('#'+cid+' select').css('display', 'block');
+ 		if( $('#'+cid+' select').length === 0){
+ 			$('#'+cid).append($scope.selectText);
+ 		}
+ 		$scope.current_cid = cid;
+
+ 	}
+ 	$scope.selectSelect = function(cid){
+ 		console.log(cid);
+ 	}
+ 	$scope.next = function(){
+ 		// $scope.chosenSamples = [];
+ 		$scope.current_stage=2;
+
+		$('.step2').css('display', 'block');
+
+ 		 var today = new Date();
+ 		 $scope.today = (today.getMonth()+1) +'/'+ today.getDate() +'/'+ today.getFullYear();
+ 		 $('#project_name').html('{{type}}_{{new_id}}_'+ (today.getMonth()+1) +'_'+ today.getDate() +'_'+ today.getFullYear() );
+ 	}
+
+ 	$scope.clear_choice = function(){
+ 		$scope.current_stage =1;
+ 		var checkboxes = $('.checkbox');
+ 		for(var i=0;i<checkboxes.length;i++){
+ 			$(checkboxes[i]).prop('checked', false);
+ 			// console.log(checkboxes[i]);
+ 		}
+ 		$scope.chosenSamples = [];
+ 		$('.step2').css('display', 'none');
+		$scope.buffers = [];
+	 	for(var i=0; i<44;i++){
+	 		$scope.buffers[i] = 'Buffer';
+	 	}
+	 	$scope.buffers[44]='Negative';
+	 	$scope.buffers[45]='Negative';
+	 	$scope.buffers[46]='Normal';
+	 	$scope.buffers[47]='Positive';
+	 	}
+
+ 	var tubeHTML='';
+	for(var j=1;j<=4;j++){
+ 		for(var i=1; i<=12; i++){
+	 		tubeHTML += '<div class="intube" id="intube-'+i+'">   </div>';
+	 	}
+	 	$('#tube-'+j).html(tubeHTML);
+	 	tubeHTML = '';
+ 	} 	
+
+
+ 	$scope.save = function(){
+ 		
+ 			$('#dialog-name').val($('#print-title').html());
+ 			$( "#dialog" ).dialog();
+ 	}
+
+ 	$scope.saveWork = function(andprint=false) {
+ 		var sample_list = [];
+ 		$scope.createTable();
+ 		for(var i =0; i<$scope.chosenSamples.length;i++){
+ 		 		sample_list.push( {'sample_id' : $scope.chosenSamples[i].sample_id, 'container' : $scope.chosenSamples[i].container, 'tube': i+1, 'result':  $scope.chosenSamples[i].result, 'order_id' : $scope.chosenSamples[i].order_id,});
+ 		 	}
+ 		 var platemap = $scope.values.join(',');
+ 		 var result_data = {'platemap': platemap}	
+ 		 var name = $('#project_name').text();
+
+ 		$http({
+ 			
+    						headers: {
+   							'Content-Type': 'application/json'
+ 							},
+    						method:'POST', 
+    						url:'/lab/create_fp/', 
+    						data:{
+    							'name': name, 
+						        'sample_list': sample_list,
+						        'result_data': result_data
+    						}
+    					}).then(function(response){
+    						console.log(response.data);
+    							if(response.data='None'){
+    								user_message('', 'Project Created');
+    								if(andprint){
+    									$scope.Print();
+    								}
+    								window.location.href = '/lab/workflows/#{{title}}';
+    							}else{
+    								user_message('error', response.data);
+    								// alert('error - ' + response.data ) ;	
+    							}
+					    		
+					    });
+ 	}
+
+ 	$scope.values = [];
+ 	$scope.createTable=function(){
+ 		var columnList = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+ 		 var tubedetails = ' <table class="table table-stripped text-center platemap for-print"><tr><th class="column"></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>';
+		 
+		 for(var i=0;i <48; i++){
+		 	if(typeof $scope.chosenSamples[i] === 'undefined'){
+		 		$scope.values[i] = $scope.buffers[i];
+		 	}else{
+		 		$scope.values[i] = $scope.chosenSamples[i].asn;
+		 	}
+		 	
+		 }
+		 // console.log('values', $scope.values);
+		 					
+		 for(var i =0; i<=7;i++){
+ 		 	tubedetails += '<tr>';
+ 		 	tubedetails += '<td> '+columnList[i]+'</td><td>'+$scope.values[i] + '</td><td> '+$scope.values[8+i] + '</td><td> '+$scope.values[(8*2)+i] + '</td><td> '+$scope.values[(8*3)+i] + '</td><td> '+$scope.values[(8*4)+i] + '</td><td> '+$scope.values[(8*5)+i] + '</td>';
+ 		 	tubedetails += '</tr>';
+ 		 }
+ 					
+
+
+ 		 tubedetails += '</table>';
+
+ 		 $('#tube-details-print').html(tubedetails);
+ 	}
+ 	$scope.Print = function(){
+ 		$scope.createTable();
+		print_div(true);
+ 	}
+}]);
+gimsApp.filter("trust", ['$sce', function($sce) {
+  return function(htmlCode){
+    return $sce.trustAsHtml(htmlCode);
+  }
+}]);
+</script>
+
+<div ng-controller="workflowsController" class="workflows">
+
+<div class="steps">
+
+
+
+  {% include "workflows/com/lab_header.html" %}
+        
+
+	</div>  
+
+		<div class="samples step1">
+
+					<button class="button btn btn-info btn-sm" ng-click="multi_select()"> Select next 10  </button> 
+					<button class="btn btn-default btn-sm" ng-click="clear_choice()"> Clear </button>
+					<!-- <button class="button btn btn-primary btn-sm" ng-click="next()"> Add to the project </button>  -->
+					<div class="list-table">
+						<table class="table table-striped table-bordered table-hover table-hove-info ">
+							<tr>
+								<th></th>
+								<th>  name </th>
+								<th> sample asn </th>
+								<th> 
+									 container ID 
+							       
+		       					</th>
+								<th> order type</th>
+								<th>  status </th>
+								<th>  start date</th>
+								<!-- <th> End date </th> -->
+								<th> User ID </th>
+							</tr>
+							<tr ng-repeat="s in s_lists | orderBy:sortType:sortReverse " id='{$ s.sample_id + "_" +s.order_id $}' class="sample"> 
+								<th> <input type="checkbox" name="{$ s.asn $}" id="{$ s.asn $}" class="checkbox" ng-click="chooseSample(s);" data-s="{$ s $}"/></th>
+								<td>{$ s.pname $}</td>
+								<td>{$ s.asn $}					</td>
+								<td>	{$ s.container $}					</td>
+								<td>	{$ s.order_type $}					</td>
+								<td> 	{$ s.status_name $}</td>
+								<td> 	{$ s.start_date $}</td>
+								<!-- <td> 	{$ s.end_date $}</td> -->
+								<td> {$ s.userid $}</td>
+							</tr>
+						</table> 
+					</div>
+		</div>	
+
+	
+
+	 	<div class="tubes step2">
+	 		<div id="tubes"  class="for-print flex" >
+
+		 		<div id="tube-desc" >
+		 			<div class="sub-sub-title" id="tube-info">
+		 				<div id="print-title" class="print-title print-items"> Project : <span id="project_name"> </span> </div> 
+		 				<div class="print-only print-items"> Today's Date: {$ today $} </div>
+		 				<div class="print-only print-items"> Initials: {{ request.user }} </div>
+		 				<div class="print-items"> Total # of samples: {$ chosenSamples.length $} </div>
+		 			</div>
+
+		 			<div class="sub-sub-title text-center">
+		 				Fingerprinting Normalization Platemap 
+		 			</div>
+
+		 			<div id="tube-details" class="exclude">
+		 				<table class="table table-stripped text-center platemap">
+		 					<tr>
+		 						<th class="column"></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+		 					</tr>
+		 					<tr>
+		 						<td class="column">A</td>
+		 						{% for i in '012345' %}
+		 						<td ng-show="chosenSamples[{{i}}*8].asn">{$ chosenSamples[{{i}}*8].asn $}</td>
+		 						
+		 						<td ng-hide="chosenSamples[{{i}}*8].asn" id="A{$ {{i}}+1 $}"  class="{$ buffers[{{i}}*8] $}"> 
+		 							 <select ng-model="buffers[{{i}}*8]" ng-change="selectSelect({{i}}*8);"> <option>Buffer</option> <option>Negative</option><option>Normal</option> <option>Positive</option> </select>  
+		 						 </td>
+		 						 {% endfor %}
+		 						
+		 					</tr>
+		 					<tr>
+		 						<td class="column">B</td>
+		 						{% for i in '012345' %}
+		 						<td ng-show="chosenSamples[{{i}}*8+1].asn">{$ chosenSamples[{{i}}*8+1].asn $}</td>
+		 						
+		 						<td ng-hide="chosenSamples[{{i}}*8+1].asn" id="B{$ {{i}}+1 $}" class="{$ buffers[{{i}}*8+1] $}"> 
+		 							 <select ng-model="buffers[{{i}}*8+1]" ng-change="selectSelect({{i}}*8+1);"> <option>Buffer</option> <option>Negative</option><option>Normal</option> <option>Positive</option> </select>  
+		 						 </td>
+		 						 {% endfor %}
+		 					</tr>
+		 					<tr>
+		 						<td class="column">C</td>
+		 						{% for i in '012345' %}
+		 						<td ng-show="chosenSamples[{{i}}*8+2].asn">{$ chosenSamples[{{i}}*8+2].asn $}</td>
+		 						
+		 						<td ng-hide="chosenSamples[{{i}}*8+2].asn" id="C{$ {{i}}+1 $}" class="{$ buffers[{{i}}*8+2] $}"> 
+		 							 <select ng-model="buffers[{{i}}*8+2]" ng-change="selectSelect({{i}}*8+2);"> <option>Buffer</option> <option>Negative</option><option>Normal</option> <option>Positive</option> </select>  
+		 						 </td>
+		 						 {% endfor %}
+		 					</tr>
+		 					<tr>
+		 						<td class="column">D</td>
+		 						{% for i in '012345' %}
+		 						<td ng-show="chosenSamples[{{i}}*8+3].asn">{$ chosenSamples[{{i}}*8+3].asn $}</td>
+		 						
+		 						<td ng-hide="chosenSamples[{{i}}*8+3].asn" id="D{$ {{i}}+1 $}"  class="{$ buffers[{{i}}*8+3] $}"> 
+		 							 <select ng-model="buffers[{{i}}*8+3]" ng-change="selectSelect({{i}}*8+3);"> <option>Buffer</option> <option>Negative</option><option>Normal</option> <option>Positive</option> </select>  
+		 						 </td>
+		 						 {% endfor %}
+		 					</tr>
+		 					<tr>
+		 						<td class="column">E</td>
+		 								 						{% for i in '012345' %}
+		 						<td ng-show="chosenSamples[{{i}}*8+4].asn">{$ chosenSamples[{{i}}*8+4].asn $}</td>
+		 						
+		 						<td ng-hide="chosenSamples[{{i}}*8+4].asn" id="E{$ {{i}}+1 $}" class="{$ buffers[{{i}}*8+4] $}"> 
+		 							 <select ng-model="buffers[{{i}}*8+4]" ng-change="selectSelect({{i}}*8+4);"> <option>Buffer</option> <option>Negative</option><option>Normal</option> <option>Positive</option> </select>  
+		 						 </td>
+		 						 {% endfor %}
+		 					</tr>
+		 					<tr>
+		 						<td class="column">F</td>
+		 								 						{% for i in '012345' %}
+		 						<td ng-show="chosenSamples[{{i}}*8+5].asn">{$ chosenSamples[{{i}}*8+5].asn $}</td>
+		 						
+		 						<td ng-hide="chosenSamples[{{i}}*8+5].asn" id="F{$ {{i}}+1 $}" class="{$ buffers[{{i}}*8+5] $}"> 
+		 							 <select ng-model="buffers[{{i}}*8+5]" ng-change="selectSelect({{i}}*8+5);"> <option>Buffer</option> <option>Negative</option><option>Normal</option> <option>Positive</option> </select>  
+		 						 </td>
+		 						 {% endfor %}
+		 					</tr>
+		 					<tr>
+		 						<td class="column">G</td>
+		 								 						{% for i in '012345' %}
+		 						<td ng-show="chosenSamples[{{i}}*8+6].asn">{$ chosenSamples[{{i}}*8+6].asn $}</td>
+		 						
+		 						<td ng-hide="chosenSamples[{{i}}*8+6].asn" id="G{$ {{i}}+1 $}" class="{$ buffers[{{i}}*8+6] $}"> 
+		 							 <select ng-model="buffers[{{i}}*8+6]" ng-change="selectSelect({{i}}*8+6);"> <option>Buffer</option> <option>Negative</option><option>Normal</option> <option>Positive</option> </select>  
+		 						 </td>
+		 						 {% endfor %}
+		 					</tr>
+		 					<tr>
+		 						<td class="column">H</td>
+		 						{% for i in '012345' %}
+		 						<td ng-show="chosenSamples[{{i}}*8+7].asn">{$ chosenSamples[{{i}}*8+7].asn $}</td>
+		 						
+		 						<td ng-hide="chosenSamples[{{i}}*8+7].asn" id="H{$ {{i}}+1 $}" class="{$ buffers[{{i}}*8+7] $}"> 
+		 							 <select ng-model="buffers[{{i}}*8+7]" ng-change="selectSelect({{i}}*8+7);"> <option>Buffer</option> <option>Negative</option><option>Normal</option> <option>Positive</option> </select>  
+		 						 </td>
+		 						 {% endfor %}
+		 					</tr>
+		 				</table>
+		 			</div>
+		 			<div id="tube-details-print" class="print-only">
+		 			</div>
+		 		</div>
+	 		</div>
+
+	 		<div class="actions">
+				 
+				 
+				<!-- <button class="btn btn-primary btn-sm" ng-click="saveWork()"> Save </button>  -->
+				 <button class=" btn btn-primary btn-sm" ng-click="Print();"> Print </button>
+				  <button class=" btn btn-primary btn-sm" onclick="save_div(true);"> Export to CVS </button>
+				  <!-- <label for="concentration"> concentration </label> <input type="text" name="concentration" ng-model="concentration" /> -->
+				 <button class="btn btn-primary btn-sm" ng-click="saveWork()"> Create Project  </button>
+			</div>
+	 	</div>
+
+
+	 	<div id="dialog" title="Save current workflow">
+	 		<div class="dialog-input"> 
+	 		<input id="dialog-name" type="name" name="name" placeholder="workflow name" />
+	 		
+	 		 </div>
+	 	</div>
+
+
+
+
+</div>
+
+</div>
+{% include "com/message_modal.html" %}
+{% endblock %}

@@ -11,7 +11,8 @@ a:hover {
 }
 .container, .container-fluid{               /* main block containers  for top menu */
     margin-top:100px;
-    margin-bottom: 30px; 
+    margin-bottom: 30px;
+    min-width: 1100px;
 }
 
 .icon {
@@ -28,20 +29,20 @@ a:hover {
 form select{
     -webkit-appearance: menulist-button;
 }
-.right-button{
+.float-right, .right-button{
     float: right;
     margin: 3px;
 }
 .flex{
         display: flex;
 }
-.flex .left-flex,.flex .right-flex, .flex .flex-left, .flex .lex-right {
+.flex .left-flex,.flex .right-flex, .flex .flex-left, .flex .flex-right {
     width: 50%;
 }
 .tabs button{
     font-size: 0.7em;
 }
-.top-buffer { margin-top:30px; }
+.top-buffer { margin-top:30px !important; }
 
 .main-header {
   display: -webkit-flex; /* Safari */
@@ -108,7 +109,21 @@ form select{
     padding: 20px;
     margin-top: 20px;
 }
-
+.list-table{
+    max-height: 800px;
+    overflow: auto;
+    margin: 10px auto;
+}
+.list-table-short{
+    max-height: 600px;
+}
+.list-table-search{
+    text-align: right;
+    margin: 10px;
+}
+.list-table table{
+    margin-bottom:0;
+}
 .panel{
     padding:10px;
     margin: 20px auto;
@@ -369,7 +384,8 @@ table  th {
 /* workflows */
 .workflows table{
     background-color:white;
-    max-height: 1600px;
+    max-height: 800px;
+     overflow: auto;
 }
 
 .menu-search button{

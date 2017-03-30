@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from datetime import datetime
-from tracker.models import Orders, Samples
+from tracker.models import Orders, Samples, OrderType
 # Create your models here.
 
 STATUS_CODE = (
@@ -29,9 +29,11 @@ class WorkflowType(models.Model):
 
 
 class Workflows(models.Model):
-    type = models.ForeignKey('WorkflowType', default=1)
+    order_type = models.ForeignKey('tracker.OrderType', default=1)
+    type = models.CharField(max_length=40, null=True)
+    order_type = models.ForeignKey('tracker.OrderType', on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100, null=False)
-    version = models.CharField(max_length=20, default='1')
+    version = models.CharField(max_length=20, default='1.0')
     workflow_id = models.CharField(max_length=200, null=False)
     inputs = models.CharField(max_length=400, null=True, blank=True)
     fixed_inputs = models.CharField(max_length=400, null=True, blank=True)
@@ -66,13 +68,31 @@ LabWorkFlow_Status = (
 )
 
 
+class LabType(models.Model):
+    labtype = models.CharField(max_length=20, default='Q')
+    labtype_name = models.CharField(max_length=50, null=False)
+    type_desc = models.CharField(max_length=200, null=True)
+
+    def __unicode__(self):
+        return self.labtype_name
+
+
+class LabStatus(models.Model):
+    labstatus = models.CharField(max_length=20, default='QSTART')
+    labstatus_name = models.CharField(max_length=50, null=False)
+    status_desc = models.CharField(max_length=200, null=True)
+
+    def __unicode__(self):
+        return self.labstatus_name
+
+
 class LabWorkFlowStatus(models.Model):
     workflow = models.ForeignKey('LabWorkFlows',  default=1)
-    tube_number = models.CharField(max_length=10, default=1)
+    tube_number = models.IntegerField(blank=False)
     order = models.ForeignKey('tracker.Orders', default=1)
     sample = models.ForeignKey('tracker.Samples', default=1)
     container = models.CharField(max_length=10, default=1, null=True, blank=True)
-    status = models.CharField(choices=LabWorkFlow_Status, max_length=20, null=False, default='QSTART')
+    status = models.ForeignKey('LabStatus', default=1)
     result = models.CharField(max_length=200, null=True)
 
 
@@ -80,10 +100,11 @@ class LabWorkFlows(models.Model):
     name = models.CharField(max_length=100, null=False)
     created_date = models.CharField(max_length=50, null=False, default=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     updated_date = models.CharField(max_length=50, null=False, default=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    type = models.CharField(choices=LabWorkFlow_Type, max_length=20, default='Q')
     samples_list = models.CharField(max_length=200, null=True, blank=True)
-    status = models.CharField(choices=LabWorkFlow_Status, max_length=20, default='QSTART')
-    result = models.CharField(max_length=200, null=True)
+    type = models.ForeignKey('LabType', default=1)
+    status = models.ForeignKey('LabStatus', default=1)
+    username = models.CharField(max_length=50, null=True)
+    result_data = models.CharField(max_length=1000, null=True)
     objects = models.Manager()
     wf_objects = WorkflowManager()
 

@@ -2,9 +2,9 @@ from django.contrib import admin
 from django import forms
 
 # Register your models here.
-from .models import TrackingLog, Samples, Orders, OrderStatus, OrderType, OrderGroups, OrderRelations, SampleFiles\
-    , Patients, PeopleRelations, PhenoTypes, PatientOrderPhenoList, PatientOrderPhenoType, NoteCategory, Notes, \
-    PatientFiles, LabOrderStatus, SORelations, SampleOrderRel, FamilyRole, AffectedStatus
+from .models import Samples, Orders, OrderStatus, OrderType, OrderGroups, OrderRelations, SampleFiles\
+    , Patients, PeopleRelations, NoteCategory, Notes, \
+    PatientFiles, SORelations, SampleOrderRel, FamilyRole, AffectedStatus
 
 
 class TrackingAdmin(admin.ModelAdmin):
@@ -74,18 +74,6 @@ class AffectedStatusAdmin(admin.ModelAdmin):
     list_display = ['status', 'status_name']
 
 
-class PhenoModelForm(forms.ModelForm):
-    desc = forms.CharField(widget=forms.Textarea)
-    class Meta:
-        model = PhenoTypes
-        fields = '__all__'
-
-
-class PhenoAdmin(admin.ModelAdmin):
-    list_display = ['name', 'date', 'type', 'desc', 'image']
-    form = PhenoModelForm
-
-
 class PatientOrderPhenoListAdmin(admin.ModelAdmin):
     list_display =  [ 'order', 'pheno_checklists', 'pheno_valuelists']
 
@@ -97,23 +85,17 @@ class NoteCategoryAdmin(admin.ModelAdmin):
 class NotesAdmin(admin.ModelAdmin):
     list_display = ['category','order', 'patient_id', 'recipient', 'note']
 
-# class PatientOrderPhenoTypeAdmin(admin.ModelAdmin):
-#     list_display = ['patient', 'order', 'phenotype']
 
 admin.site.register(Samples, SampleAdmin)
 admin.site.register(SampleFiles, SampleFileAdmin)
 admin.site.register(Orders, OrderAdmin)
-admin.site.register(TrackingLog, TrackingAdmin)
 admin.site.register(OrderStatus, StatusAdmin)
-admin.site.register(LabOrderStatus, LabStatusAdmin)
 admin.site.register(OrderType, OrderTypeAdmin)
 admin.site.register(OrderRelations, OrderRelationsAdmin)
 admin.site.register(OrderGroups, OrderGroupsAdmin)
 admin.site.register(Patients, PatientsAdmin)
 admin.site.register(PatientFiles, PatientFilesAdmin)
 admin.site.register(PeopleRelations, PeopleRelationsAdmin)
-admin.site.register(PhenoTypes, PhenoAdmin)
-admin.site.register(PatientOrderPhenoList, PatientOrderPhenoListAdmin)
 admin.site.register(NoteCategory, NoteCategoryAdmin)
 admin.site.register(Notes, NotesAdmin)
 admin.site.register(SORelations, SORelationsAdmin)

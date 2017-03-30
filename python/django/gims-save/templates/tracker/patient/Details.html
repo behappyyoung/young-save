@@ -25,8 +25,15 @@ d{% extends "tracker/tracker_base.html" %}
     height: 250px;
 }
 .fileupload{
-    margin: 30px auto;
+    margin: 50px auto;
     text-align: center;
+}
+.pedigree_info{
+    margin: 50px;
+    text-align: left;
+}
+.pedigree_info div{
+    height: 50px;
 }
 .ui-dialog .ui-dialog-content{
     width: 650px ;
@@ -56,7 +63,7 @@ d{% extends "tracker/tracker_base.html" %}
     padding:5px;
 }
 .popup table td.date, .popup table td.order_name{
-    width: 150px;
+    width: 170px;
 }
 .popup table td.action{
     width: 100px;
@@ -74,6 +81,13 @@ d{% extends "tracker/tracker_base.html" %}
 .tabs a{
     color: #337ab7;
     cursor: pointer;
+}
+.proband .role, .self .role{
+    font-weight: bold;
+    color:red;
+}
+.self {
+    border: solid 2px green;
 }
 </style>
 <script type="text/javascript">
@@ -101,17 +115,9 @@ $(function () {
                 dataType: 'json',
                 formData: {pid: '{{patient.pid}}', id:'{{patient.id}}'},
                 done: function (e, data) {
-                     location.reload();
+                     location.href ='/patient/{{patient.pid}}/#pedigree';
                 },
-                progressall: function (e, data) {
-                    var progress = parseInt(data.loaded / data.total * 100, 10);
-                    $('#progress .progress-bar').css(
-                        'width',
-                        progress + '%'
-                    );
-                }
-            }).prop('disabled', !$.support.fileInput)
-                .parent().addClass($.support.fileInput ? undefined : 'disabled');
+            });
 
 
 
@@ -120,7 +126,7 @@ $(function () {
             url:'/mybackend/get_notes/',
             type:'json',
             method:'POST',
-            data:{'pid': '{{patient.pid}}'},
+            data:{'pid': '{{patient.id}}'},
             error: function()
             {
                 //file not exists
@@ -229,7 +235,10 @@ $(function () {
 
    $(".popup").draggable();
    $('.tabs').tabs();
-    $('a[href=\''+location.hash+'\']').trigger('click');
+   if(location.hash.length>0){
+         $('a[href=\''+location.hash+'\']').trigger('click'); 
+   }
+   
 
 });
 
@@ -370,7 +379,7 @@ function delete_file(fid) {
             -->
              <div class="tab" id="group">
                 <div  class="sub-sub-title">
-                    <a href="/families/New/" target="_new"><button class="btn btn-primary btn-sm  right-button"> New Family Group </button> </a> 
+                    <a href="/families/New/?pid={{patient.id}}" target="_new"><button class="btn btn-primary btn-sm  right-button"> New Family Group </button> </a> 
                  </div>
                  <table class="table table-bordered table-striped table-hover">
                         <tr>
@@ -387,18 +396,23 @@ function delete_file(fid) {
 
                         {% for f in family %}
                                 
-                               
-                        <tr class="familylist {% ifchanged f.family_id %} new {% endifchanged %}">
-                        <td>{% ifchanged f.family_id %}
-                            <a href="/families/?fid={{ f.family_id }}"> {{ f.family_id }} </a> 
-                             <a href="/families/Add/?fid={{ f.family_id }}"><button class="btn btn-primary btn-sm right-button "> Edit Family  </button> </a> 
-                             {% endifchanged %}</td>
-                             <td> <a href="/patient/{{ f.pid }}/">{{ f.pid }}  </a> </td>
-                              <td>{{ f.mrn }}</td>
-                            <td>{{ f.role_name }}</td>
+                                {% ifchanged f.family_id %} {% if forloop.counter0 != 0 %} </table><table class="table table-bordered table-striped table-hover"> {% endif %}  {% endifchanged %}      
+                        <tr class="familylist {{ f.role_name }} {% if f.pid ==  patient.pid %} self {% endif %}">
+                           {% ifchanged f.family_id %}
+                                     <td class="new">
+                                        <a href="/families/?fid={{ f.family_id }}"> {{ f.family_id }} </a> 
+                                        <a href="/families/Add/?fid={{ f.family_id }}"><button class="btn btn-primary btn-sm right-button "> Edit Family  </button> </a> 
+                                     </td>
+                            {% else %}
+                                    <td> </td>
+                           {% endifchanged %}
+                            
+                            <td> <a href="/patient/{{ f.pid }}/">{{ f.pid }}  </a> </td>
+                            <td>{{ f.mrn }}</td>
+                            <td class="role">{{ f.role_name }}</td>
                             <td>{{ f.status_name }}</td>
                             <td>{{ f.sex }}</td>
-                            <td>{{ f.first_name }} {{ f.last_name }} </td>
+                            <td>{{ f.first_name }} {{ f.middle_name }} {{ f.last_name }} </td>
                             <td>{{ f.dob }} </td>
                         </tr>
 
@@ -424,7 +438,12 @@ function delete_file(fid) {
                             {% endif %}
                          </div> 
 
+                         <div class="pedigree_info">
+                                    <div class=""> Uploaded by : {{ped_file.by}} </div>
+                                 <div class=""> Update date : {{ped_file.update_time}} </div>
+                        </div>
                         <div class="fileupload">
+                                
                               <label for="fileupload" class="btn btn-success fileinput-button" id="label-fileupload"> Update Pedigree Image</label>
                         {% else %}
                         </div> 
@@ -452,11 +471,11 @@ function delete_file(fid) {
                         <!-- <th> Patient ID</th> -->
 
                     </tr>
-                    {% for o in orders %}
+                    {% for o in so %}
                     <tr>
-                        <td><a href="/order/{{ o.id }}/">{{ o.order_name }}</a></td>
-                        <td>{{ o.type.type_name }}</td>
-                        <td class="text-center">{{ o.status.status_name }} <br />
+                        <td><a href="/order/{{ o.order.id }}/">{{ o.order.order_name }}</a></td>
+                        <td>{{ o.order.type.type_name }}</td>
+                        <td class="text-center">{{ o.order.status.status_name }} <br />
                              <!-- <button class="btn btn-primary btn-sm btn-order-note" id="{{ o.id }}" >Notes </button>  -->
                         </td>
                         <td> 
@@ -466,7 +485,7 @@ function delete_file(fid) {
                                 </tr>
                                 {% for p in phenotypes %}
 
-                                    {% if p.order_id == o.id %}
+                                    {% if p.order_id == o.order.id %}
                                     <tr class="phenolist">
 
                                         <td>{{p.acc}}</td>
@@ -523,6 +542,8 @@ function delete_file(fid) {
                             <th> File Name </th>
                             <th> type</th>
                             <th> location </th>
+                            <th> By </th>
+                            <th> date </th>
                             <th> </th>
 
                         </tr>
@@ -542,6 +563,8 @@ function delete_file(fid) {
                              <td>{{ f.file_name }} </td>
                              <td> {{ f.type }} </td>
                              <td>{{ f.location }}</td>
+                             <td> {{f.by}}</td>
+                             <td> {{f.update_time}}</td>
                              <td>
                                 <a id="go-edit-patientfile" href="/patient/{{patient.pid }}/Files/Edit/?fid={{f.id}}"> 
                                 <button id="edit-file" class="button btn-sm btn-default" > Edit </button> </a>
