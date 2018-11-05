@@ -26,14 +26,9 @@ SECRET_KEY = '_k4zi7emd(w(_j%5dud2f!qhp%5o5u$s9$a&-0x0xn-!px#mzf'
 # SECURITY WARNING: don't run with debug turned on in production!
 
 
-if socket.gethostname() == 'Lap11496m':   # local machine
-    LOCAL = True
-    DEBUG = True
-    TESTING = True
-else:
-    LOCAL = False
-    DEBUG = False
-    TESTING = False
+LOCAL = True
+DEBUG = True
+TESTING = True
 
 ALLOWED_HOSTS = []
 
@@ -100,46 +95,6 @@ if LOCAL:
                 'charset': 'utf8mb4',
             }
         }
-        # 'default': {
-        #     'ENGINE': 'django.db.backends.mysql',
-        #     'NAME': 'crsapi',
-        #     'USER': 'dba',
-        #     'PASSWORD': 'Stanf0rddbauser20!7',
-        #     'HOST': '35.197.102.216',
-        #     'PORT': '3306',
-        #     'OPTIONS': {
-        #         'sql_mode': 'traditional',
-        #         'init_command': 'SET innodb_strict_mode=1',
-        #         'charset': 'utf8mb4',
-        #         'ssl': {
-        #             'ca': os.path.join(BASE_DIR, 'google', 'cgsdevel-cloudsql-server-ca.pem'),
-        #             'cert': os.path.join(BASE_DIR, 'google', 'cgsdevel-cloudsql-client-cert.pem'),
-        #             'key': os.path.join(BASE_DIR, 'google', 'cgsdevel-cloudsql-client-key.pem')
-        #         }
-        #     }
-        # },
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'lims_grs',
-            'USER': 'dba',
-            'PASSWORD': 'Stanford2018_dba',
-            'HOST': '104.197.101.208',
-            'PORT': '3306',
-            'OPTIONS': {
-                'sql_mode': 'traditional',
-                'init_command': 'SET innodb_strict_mode=1',
-                'charset': 'utf8mb4',
-                'ssl': {
-                        'ca': os.path.join(BASE_DIR, 'google', 'grs-dev-grs-dev-server-ca.pem'),
-                        'cert': os.path.join(BASE_DIR, 'google', 'grs-dev-grs-dev-client-cert.pem'),
-                        'key': os.path.join(BASE_DIR, 'google', 'grs-dev-grs-dev-client-key.pem')
-                        }
-            }
-        },
-
     }
 
 LOGGING = {
