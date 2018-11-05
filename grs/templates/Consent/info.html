@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block head-content %}
+
+
+<style type="text/css">
+.base-info{
+	border: solid 1px black;
+	width: 700px;
+	margin:auto;
+}
+.base-info .key{
+	display: inline-block;
+	width: 200px;
+	margin: 10px;
+}
+.base-info .value{
+	display: inline-block;
+	min-width: 400px;
+}
+.base-info .value input{
+	width: 380px;
+	min-height: 40px;
+	margin: 10px 0;
+
+}
+.base-info .value  button{
+	width: 190px;
+	min-height: 40px;
+	margin: 10px 0;
+}
+</style>
+
+<script type="text/javascript">
+	 grsApp.controller('grsController', ['$scope', function($scope) {
+                {% autoescape off %}
+
+                 {% endautoescape %}
+        $scope.patient = {'first_name': '', 'last_name' : '', 'dob': '', 'sex': '', 'mrn': '', 'consent': ''};
+
+    }]);
+
+
+var afterSign = function(data=''){
+	console.log('test', data);
+	popupWin.close();
+	delete popupWin;
+}
+
+
+	$( function() {
+    	$( "#datepicker" ).datepicker();
+  	} );
+
+</script>
+{% endblock %}
+
+{% block content %}
+
+<div ng-controller="grsController" class="consent">
+	<div class="base-info">
+		<div>
+			<div class="key">First Name</div>
+			<div class="value">
+				<input type="" name="" ng-model="patient.first_name" placeholder="Fist Name">
+			</div>
+		</div>
+		<div>
+			<div class="key">Last Name</div>
+			<div class="value"><input type="" name="" ng-model="patient.last_name" placeholder="Last Name"></div>
+		</div>
+		<div>
+			<div class="key">DOB</div>
+			<div class="value">
+				<input id="datepicker" placeholder="MM/DD/YYYY" ng-model="patient.dob" placeholder="MM/DD/YYYY" />
+		</div>
+
+	  
+
+		
+		</div>
+		<div>
+			<div class="key">SEX</div>
+			<div class="value">
+				<button class="btn btn-lg {$ (patient.sex == 'M') ? 'btn-success' : 'btn-default' $} " name="sex-m" ng-click="patient.sex = 'M' "  >Male </button> 
+				<button class="btn btn-lg {$ (patient.sex == 'F') ?'btn-success' : 'btn-default' $} " name="sex-f" ng-click="patient.sex = 'F' ">Female </button></div>
+		</div>
+		<div>
+			<div class="key">MRN</div>
+			<div class="value"><input type="" name="" ng-model="patient.mrn" placeholder="Medical Record Number"></div>
+		</div>	
+	</div>
+
+
+	<div class="text-center top-buffer">
+
+		<div ng-show="patient.sex">
+				<button onclick="OpenPopupCenter('/twothreeandme/consent/form/', 'consentform', 700, 600);" class="btn btn-lg btn-success"> Read Consent </button>		
+
+		</div>
+		<div ng-show="patient.consent">
+
+				<button onclick="OpenPopupCenter('/twothreeandme/consent/form/', 'consentform', 700, 600);" class="btn btn-lg btn-success"> show Consent </button>		
+		</div>	
+
+	</div>
+
+
+{$ patient $}
+
+</div>
+
+<!--<div class="text-center top-buffer">-->
+
+    <!--<a href="/twothreeandme/update_chromosome/1/"> Update Chromosome </a>-->
+
+
+
+
+
+<!--</div>-->
+
+<!--<div class="text-center top-buffer">-->
+
+
+<!--<a href="/twothreeandme/update_accessions/"> Update Accessions </a>-->
+
+
+
+<!--</div>-->
+{% endblock %}

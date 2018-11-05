@@ -1,0 +1,12 @@
+venv/
+output/
+files/
+logs/
+.DS_Store
+*.pyc
+*.sock
+.idea/
+temp/
+log/*
+test/
+nohup.out

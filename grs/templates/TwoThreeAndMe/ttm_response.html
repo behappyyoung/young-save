@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="text-center top-buffer">
+
+<div> <b>  23andMe Response </b> </div>
+<br />
+
+{% for l in response_list %}
+	{{l}} <br />
+{% endfor %}
+<br />
+
+
+<a href="{{ttm_authurl}}"> GO / Grant from 23andMe </a>
+
+<div>
+<a href="/twothreeandme/get_account/{{token}}/" target="_new">get account info </a>
+</div>
+{% if profile_id %}
+<div>
+<a href="/twothreeandme/get_genomes/{{profile_id}}/{{token}}/" target="_new">get genomes </a>
+</div>
+{% endif %}
+</div>
+
+{% endblock %}

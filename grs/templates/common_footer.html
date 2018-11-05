@@ -1,0 +1,11 @@
+{% load staticfiles %}
+ <script src="{% static 'JS/main.js' %}" ></script>
+ <div id="footer" class="main-footer">
+{% load custom_filter %}
+<p>
+
+    <a href="/privacy/" id="a_privacy" target="_self" class="footer">Privacy</a><span class="Seperator">|</span>
+
+    <div> CRS API version : {% tag_git_branch %}</div>
+</p>
+</div>
